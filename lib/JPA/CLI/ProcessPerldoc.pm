@@ -7,8 +7,7 @@ has name   => ( is => 'ro', isa => 'Str', required => 1 );
 package JPA::CLI::ProcessPerldoc;
 use Moose;
 use MooseX::AttributeHelpers;
-use Path::Class::Dir;
-use Path::Class::File;
+use MooseX::Types::Path::Class;
 use File::Find::Rule;
 use File::Path ();
 use File::Temp ();
@@ -16,6 +15,13 @@ use Pod::Xhtml;
 
 with 'MooseX::Getopt';
 with 'MooseX::SimpleConfig';
+
+has output_dir => (
+    is => 'ro',
+    isa => 'Path::Class::Dir',
+    coerce => 1,
+    required => 1
+);
 
 has sources => (
     metaclass => 'Collection::Array',
@@ -95,10 +101,9 @@ sub run {
     my ($self) = @_;
     my $workdir = $self->workdir;
 
-use Data::Dumper;
-warn Dumper($self);
     my $parser = Pod::Xhtml->new();
     my $cwd = Cwd::cwd();
+    my $dir = $self->output_dir;
     # Check out the source code
     foreach my $git_repo ($self->all_sources) {
         chdir $workdir;
@@ -108,11 +113,34 @@ warn Dumper($self);
         # XXX need to work with the latest version
         chdir $git_repo->name;
 
+        my @modules;
         # Find all pod
         foreach my $file (File::Find::Rule->file->name('*.pod')->in(".")) {
-            $file = Path::Class::File->new($file);
-            $parser->parse_from_file( $file->openr(), \*STDOUT );
+            my $modname = $file;
+            $modname =~ s/\//::/g;
+            $modname =~ s/\.pod$//;
+            my $source = Path::Class::File->new($file);
+
+            $file =~ s/\.pod$/\.html/;
+            my $output = $dir->file($git_repo->name, $file);
+
+            if (! -d $output->parent) {
+                $output->parent->mkpath;
+            }
+
+            $parser->parse_from_file( $source->openr(), $output->openw );
+
+            push @modules, { name => $modname, link => $output->relative( $dir )->relative( $git_repo->name ) };
         }
+
+        my $index = $dir->file($git_repo->name, 'index.html');
+        my $fh    = $index->openw;
+
+        print $fh "<html><body><ul>",
+            (map { qq|<li><a href="$_->{link}">$_->{name}</a></li>| } @modules),
+            "</ul></body></html>"
+        ;
+
 
     }
     chdir $cwd;
