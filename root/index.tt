@@ -1,0 +1,11 @@
+[% WRAPPER wrapper.tt page.title => "Home" %]
+
+<h1>Japan Perl Association ドキュメンテーション和訳プロジェクト</h1>
+
+<p>Perlモジュールのうち、特に重要なものを選び、それらの和訳を提供するプロジェクトです。</p>
+
+<ul><!-- これ、自動的に作るようにするべきだよね -->
+    <li><a href="/pod/Moose-Doc-JA">Moose</a></li>
+</li>
+
+[% END %]

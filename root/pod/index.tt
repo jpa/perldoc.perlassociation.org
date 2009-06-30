@@ -1,0 +1,15 @@
+[% WRAPPER wrapper.tt,
+    page.title => dist 
+%]
+
+<h1>[% dist | html %] [% version | html %]</h1>
+
+<a href="http://search.cpan.org/search?query=[% dist | uri %]&mode=dist">search.cpan.orgでの検索結果</a>
+
+<ul>
+[% FOREACH module IN modules %]
+<li><a href="[% module.link %]">[% module.name | html %]</a></li>
+[% END %]
+</ul>
+
+[% END # WRAPPER %]
