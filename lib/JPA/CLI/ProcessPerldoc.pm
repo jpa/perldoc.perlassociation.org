@@ -12,9 +12,38 @@ use File::Find::Rule;
 use File::Path ();
 use File::Temp ();
 use Pod::Xhtml;
+use Template;
+use YAML::XS qw(LoadFile);
 
 with 'MooseX::Getopt';
 with 'MooseX::SimpleConfig';
+
+has template => (
+    is => 'ro',
+    isa => 'Template',
+    lazy => 1,
+    default => sub {
+        my $self = shift;
+        return Template->new( $self->template_args );
+    }
+);
+
+has template_args => (
+    is => 'ro',
+    isa => 'HashRef',
+    required => 1,
+);
+    
+has pod_parser => (
+    is => 'ro',
+    isa => 'Pod::Xhtml',
+    default => sub {
+        return Pod::Xhtml->new(
+            StringMode => 1,
+            TopLinks   => 0,
+        )
+    },
+);
 
 has output_dir => (
     is => 'ro',
@@ -99,51 +128,79 @@ sub execute {
 
 sub run {
     my ($self) = @_;
-    my $workdir = $self->workdir;
-
-    my $parser = Pod::Xhtml->new();
-    my $cwd = Cwd::cwd();
-    my $dir = $self->output_dir;
     # Check out the source code
     foreach my $git_repo ($self->all_sources) {
+        $self->process_repo( $git_repo );
+    }
+}
+
+sub process_repo {
+    my ($self, $git_repo) = @_;
+
+    my $workdir = $self->workdir;
+    my $cwd = Cwd::cwd();
+    eval {
         chdir $workdir;
-        my @cmd;
-
         $self->execute($self->command('git'), 'clone', $git_repo->remote, $git_repo->name);
-        # XXX need to work with the latest version
+
         chdir $git_repo->name;
+        $self->process_pod($git_repo);
+    };
+    my $e = $@;
 
-        my @modules;
-        # Find all pod
-        foreach my $file (File::Find::Rule->file->name('*.pod')->in(".")) {
-            my $modname = $file;
-            $modname =~ s/\//::/g;
-            $modname =~ s/\.pod$//;
-            my $source = Path::Class::File->new($file);
+    chdir $cwd;
 
-            $file =~ s/\.pod$/\.html/;
-            my $output = $dir->file($git_repo->name, $file);
+    if ($e) {
+        confess $e;
+    }
+}
 
-            if (! -d $output->parent) {
-                $output->parent->mkpath;
-            }
+sub process_pod {
+    my ($self, $git_repo) = @_;
 
-            $parser->parse_from_file( $source->openr(), $output->openw );
+    # find out version
+    my $meta = LoadFile( 'META.yml' );
+    my $version = $meta->{version};
+    my $dist    = $meta->{distribution};
 
-            push @modules, { name => $modname, link => $output->relative( $dir )->relative( $git_repo->name ) };
+    my @cmd;
+    my $parser = $self->pod_parser();
+    my $dir = $self->output_dir;
+    my $template = $self->template;
+
+    my @modules;
+
+    # Find all pod
+    foreach my $file (File::Find::Rule->file->name('*.pod')->in(".")) {
+        my $modname = $file;
+        $modname =~ s/\//::/g;
+        $modname =~ s/\.pod$//;
+        my $source = Path::Class::File->new($file);
+
+        $file =~ s/\.pod$/\.html/;
+        my $output = $dir->file($git_repo->name, $file);
+
+        if (! -d $output->parent) {
+            $output->parent->mkpath;
         }
 
-        my $index = $dir->file($git_repo->name, 'index.html');
-        my $fh    = $index->openw;
+        $parser->parse_from_file( $source->openr() );
 
-        print $fh "<html><body><ul>",
-            (map { qq|<li><a href="$_->{link}">$_->{name}</a></li>| } @modules),
-            "</ul></body></html>"
-        ;
+        my $xhtml = $parser->asString();
+        $xhtml =~ s/^.+<body>/[% WRAPPER wrapper.tt, page.title => module _ " " _ dist _ "(" _ version _ ")" %]<h1>[% module | html %]<\/h1>/sm;
+        $xhtml =~ s/<\/body>.+$/[% END %]/sm;
 
+        $template->process( \$xhtml, { version => $version, module => $modname, dist => $dist }, $output->stringify ) ||
+            confess $template->error;
 
+            push @modules, { version => $version, name => $modname, link => $output->relative( $dir )->relative( $git_repo->name ) };
     }
-    chdir $cwd;
+
+    $template->process(
+        'pod/index.tt',
+        { dist => $dist, modules => \@modules, version => $version }, 
+        $dir->file($git_repo->name, 'index.html')->stringify,
+    ) || confess $template->error;
 }
 
 sub DEMOLISH {
