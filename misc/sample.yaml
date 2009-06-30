@@ -1,0 +1,4 @@
+sources:
+    - !!perl/hash:JPA::CLI::ProcessPerldoc::Source
+      remote: git@github.com:jpa/Moose-Doc-JA.git
+      name: Moose-Doc-JA
