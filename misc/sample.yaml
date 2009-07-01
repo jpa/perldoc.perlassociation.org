@@ -2,3 +2,7 @@ sources:
     - !!perl/hash:JPA::CLI::ProcessPerldoc::Source
       remote: git@github.com:jpa/Moose-Doc-JA.git
       name: Moose-Doc-JA
+output_dir: /path/to/html
+template_args:
+    INCLUDE_PATH: /path/to/pod
+
