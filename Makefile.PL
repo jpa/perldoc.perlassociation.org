@@ -2,6 +2,7 @@ use strict;
 use inc::Module::Install;
 
 requires 'Moose';
+requires 'MooseX::Getopt';
 requires 'MooseX::AttributeHelpers';
 requires 'MooseX::Types::Path::Class';
 requires 'File::Find::Rule';
