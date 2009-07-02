@@ -1,11 +1,13 @@
-[% WRAPPER wrapper.tt page.title => "Home" %]
+[% WRAPPER wrapper.tt, 
+    page.title => "Home"
+%]
 
-<h1>Japan Perl Association ドキュメンテ〖ション下条プロジェクト</h1>
+<h1>Japan Perl Association 銉夈偔銉ャ儭銉炽儓鍜岃ǔ銉椼儹銈搞偋銈儓</h1>
 
-<p>Perlモジュ〖ルのうち、泼に脚妥なものを联び、それらの下条を捏丁するプロジェクトです。</p>
-
-<ul><!-- これ、极瓢弄に侯るようにするべきだよね -->
-    <li><a href="/pod/Moose-Doc-JA">Moose</a></li>
-</li>
-
+<ul>
+[% FOREACH module IN modules %]
+<li><a href="pod/[% module.name %]/index.html">[% module.name %]<a></li>
 [% END %]
+</ul>
+
+[% END # WRAPPER %]

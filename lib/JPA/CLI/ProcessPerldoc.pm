@@ -97,6 +97,19 @@ has commands => (
     }
 );
 
+sub create_index {
+	my ($self) = @_;
+
+    my $template = $self->template;
+    $template->process( 
+        "index.tt",
+        {
+            modules => [ $self->all_sources ],
+        },
+        $self->output_dir()->file('index.html')->stringify,
+    ) || confess $template->error;
+}
+
 sub command {
     my ($self, $name) = @_;
 
@@ -129,6 +142,7 @@ sub execute {
 sub run {
     my ($self) = @_;
     # Check out the source code
+    $self->create_index();
     foreach my $git_repo ($self->all_sources) {
         $self->process_repo( $git_repo );
     }
@@ -165,7 +179,7 @@ sub process_pod {
 
     my @cmd;
     my $parser = $self->pod_parser();
-    my $dir = $self->output_dir;
+    my $dir = $self->output_dir->subdir('pod');
     my $template = $self->template;
 
     my @modules;
