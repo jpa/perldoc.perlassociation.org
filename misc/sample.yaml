@@ -4,5 +4,5 @@ sources:
       name: Moose-Doc-JA
 output_dir: /path/to/html
 template_args:
-    INCLUDE_PATH: /path/to/pod
+    INCLUDE_PATH: /path/to/root
 
