@@ -1,0 +1,330 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual::Delta Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual::Delta</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">本文</a></li>
+<li><a href="#0_78">バージョン0.78</a></li>
+<li><a href="#0_77">バージョン0.77</a></li>
+<li><a href="#0_76">バージョン0.76</a></li>
+<li><a href="#0_75">バージョン0.75</a></li>
+<li><a href="#0_74">バージョン0.74</a></li>
+<li><a href="#0_73">バージョン0.73</a></li>
+<li><a href="#0_72">バージョン0.72</a></li>
+<li><a href="#0_71_01">バージョン0.71_01</a></li>
+<li><a href="#0_70">バージョン0.70</a></li>
+<li><a href="#0_66">バージョン0.66</a></li>
+<li><a href="#0_65">バージョン0.65</a></li>
+<li><a href="#0_62_02">バージョン0.62_02</a></li>
+<li><a href="#0_62">バージョン0.62</a></li>
+<li><a href="#0_58">バージョン0.58</a></li>
+<li><a href="#0_56">バージョン0.56</a></li>
+<li><a href="#0_55_01">バージョン0.55_01</a></li>
+<li><a href="#0_55">バージョン0.55</a></li>
+<li><a href="#0_51">バージョン0.51</a></li>
+<li><a href="#0_49">バージョン0.49</a></li>
+<li><a href="#0_45">バージョン0.45</a></li>
+<li><a href="#0_44">バージョン0.44</a></li>
+<li><a href="#0_41">バージョン0.41</a></li>
+<li><a href="#0_40">バージョン0.40</a></li>
+<li><a href="#0_37">バージョン0.37</a></li>
+<li><a href="#0_34">バージョン0.34</a></li>
+<li><a href="#0_26">バージョン0.26</a></li>
+<li><a href="#0_25">バージョン0.25以前</a></li>
+<li><a href="#-3">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual::Delta - Mooseの重要な変更点</p>
+
+</div>
+<h2 id="-2">本文</h2>
+<div id="CONTENT-2">
+<p>これは後方互換性の点で重要な、あるいは特筆に値するMooseの変更点をまとめたものです。<cite>Changes</cite>ファイルのデータと重複しているのは本当ですが、ここではより詳しい情報や（あれば）対策を紹介するのがねらいです。</p>
+<p>このドキュメントは、変化についていくのを助けるだけでなく、特定の機能をサポートする最低バージョンを調べるのにも使えます。問題に遭遇して解決策を見つけたけれどここには書かれていなかったとか、大事な機能を書き漏らしていると思ったら、パッチを送ってください。</p>
+
+</div>
+<h2 id="0_78">バージョン0.78</h2>
+<div id="0_78_CONTENT">
+<p><code>use Moose::Exporter;</code>をしたパッケージには<code>strict</code>と<code>warnings</code>がインポートされるようになりました。</p>
+
+</div>
+<h2 id="0_77">バージョン0.77</h2>
+<div id="0_77_CONTENT">
+<p><code>DEMOLISHALL</code>と<code>DEMOLISH</code>はグローバルなデストラクタを実行中かどうかをあらわす引数を受け取るようになりました。</p>
+
+</div>
+<h2 id="0_76">バージョン0.76</h2>
+<div id="0_76_CONTENT">
+<p>すでに型制約を満たしている値については型変換が実行されないようになりました。これは<code>via</code>節の副作用に依存している特殊な（バグがあると言ってもよさそうな）型変換に影響を与えるかもしれません。</p>
+
+</div>
+<h2 id="0_75">バージョン0.75</h2>
+<div id="0_75_CONTENT">
+<p><cite>Moose::Exporter</cite>が（<cite>metaclass</cite>を使わなくても）簡単にメタクラスをオーバーライドできるように<code>-metaclass</code>オプションを受け付けるようになりました。これはクラスとロールで使えます。</p>
+
+</div>
+<h2 id="0_74">バージョン0.74</h2>
+<div id="0_74_CONTENT">
+<p>Moose以外のクラスをもっと簡単に統合できるように、<cite>Moose::Util::TypeConstraints</cite>に<code>duck_type</code>というシュガー関数を追加しました。これは単に<code>$obj-&gt;can()</code>にメソッドのリストを渡して真を返すかチェックするだけのものです。</p>
+<p>多くのメソッドをリネームしました（ほとんどは<cite>Class::MOP</cite>から継承しているものです。先頭にアンダースコアをつけて、内部用であることを明示しました）。当面は古いメソッドも使えますが、メソッドがリネームされたという警告が出るようになります。いくつかのメソッドについては将来完全に削除する予定です（そのようなメソッドを利用していたMooseXの作者には影響があるかもしれません）。</p>
+
+</div>
+<h2 id="0_73">バージョン0.73</h2>
+<div id="0_73_CONTENT">
+<p>引数に名前しか渡さずに<code>subtype</code>を呼ぶと、例外を発生するようになりました。無名のサブタイプがほしい場合はこのようにしてください。</p>
+<pre>    my $subtype = subtype as 'Foo';
+
+</pre>
+<p>これはバージョン0.71_01の変更に関係するものです。</p>
+<p><cite>Moose::Meta::Method::Destructor</cite>の<code>is_needed</code>メソッドはクラスメソッドとしてしか使えないようになりました（以前はクラスメソッドとしてもオブジェクトメソッドとしても使えましたが、それぞれ内部的な実装は異なっていたのです）。</p>
+<p>Class::MOP 0.78_02でクラスを不変化する処理が内部的に大きく変わったのを受けて、Mooseの内部も変更されました。外から見える<code>$metaclass-&gt;make_immutable</code>メソッドについては従来通りの動作をします。</p>
+
+</div>
+<h2 id="0_72">バージョン0.72</h2>
+<div id="0_72_CONTENT">
+<p>可変クラスでは<code>Foo-&gt;new(undef)</code>を文句もいわずに受け入れていました。また、不変化したクラスでは不親切なエラーが出ていました。これからはどちらの場合でも親切なエラーが発生するようになっています。</p>
+<p>この「機能」は、もともとはこのようなケースを認めるために追加されたものだったのですが、</p>
+<pre>  my $args;
+
+  if ( something() ) {
+      $args = {...};
+  }
+
+  return My::Class-&gt;new($args);
+
+</pre>
+<p>このやり方は本当のエラーを簡単に隠蔽できてしまうため、筋が悪いし、いささか魔法も効き過ぎていると判断しました。</p>
+
+</div>
+<h2 id="0_71_01">バージョン0.71_01</h2>
+<div id="0_71_01_CONTENT">
+<p><code>type</code>や<code>subtype</code>をシュガーヘルパー（<code>as</code>、<code>where</code>、<code>message</code>）なしで呼ぶやり方は廃止されました。</p>
+<p>その副作用として、<code>as</code>にはPerlのプロトタイプを使うことになったので、このようなコードは動かなくなります。</p>
+<pre>  use Moose::Util::TypeConstraints;
+  use Declare::Constraints::Simple -All;
+
+  subtype 'ArrayOfInts'
+      =&gt; as 'ArrayRef'
+      =&gt; IsArrayRef(IsInt);
+
+</pre>
+<p>これは、このように変更しなければなりません。</p>
+<pre>  subtype(
+      'ArrayOfInts' =&gt; {
+          as    =&gt; 'ArrayRef',
+          where =&gt; IsArrayRef(IsInt)
+      }
+  );
+
+</pre>
+<p>古いバージョンのMooseとの後方互換性を維持するには、Mooseの<code>VERSION</code>を明示的にテストしなければなりません。</p>
+<pre>  if ( Moose-&gt;VERSION &lt; 0.71_01 ) {
+      subtype 'ArrayOfInts'
+          =&gt; as 'ArrayRef'
+          =&gt; IsArrayRef(IsInt);
+  }
+  else {
+      subtype(
+          'ArrayOfInts' =&gt; {
+              as    =&gt; 'ArrayRef',
+              where =&gt; IsArrayRef(IsInt)
+          }
+      );
+  }
+
+</pre>
+
+</div>
+<h2 id="0_70">バージョン0.70</h2>
+<div id="0_70_CONTENT">
+<p>トリガの最後の引数にメタアトリビュートオブジェクトを渡さないようにしました。実は、インライン展開されたコードの方ではしばらく前からそのように変更されていたのですが、インライン展開していないコードとドキュメントは古いままになっていました。</p>
+<p>万一実際にこの機能を利用していた場合の対策は簡単です。このように、トリガの最初の引数として渡される<code>$self</code>からアトリビュートオブジェクトを取ってください。</p>
+<pre>  has 'foo' =&gt; (
+      is      =&gt; 'ro',
+      isa     =&gt; 'Any',
+      trigger =&gt; sub {
+          my ( $self, $value ) = @_;
+          my $attr = $self-&gt;meta-&gt;find_attribute_by_name('foo');
+
+          # ...
+      }
+  );
+
+</pre>
+
+</div>
+<h2 id="0_66">バージョン0.66</h2>
+<div id="0_66_CONTENT">
+<p>サブタイプを作成したとき、Mooseが知らない親クラスを渡すと、その親クラスは単純に無視されていました。いまは自動的にその親クラスのクラス型を作成します。これは期待通りのものではないかもしれませんが、前ほど壊れていません。</p>
+<p>以前は「Foo!Bar」のような名前のサブタイプを宣言できました。これは認めるべきなのでしょうが、「ArrayRef[Foo!Bar]」のようなパラメータ付きの型で使うと正しく動作しませんでした。いまはシュガー関数を通じて生成される名前を吟味して、英数字と「:」「.」しか含められないようにしています。</p>
+
+</div>
+<h2 id="0_65">バージョン0.65</h2>
+<div id="0_65_CONTENT">
+<p>アトリビュート経由で生成されたメソッドもロールの<code>requires</code>を満足させられるようになりました。正直にいって、なぜスティーヴンが最初からそうしていなかったのかはわかりません。まったく、頭がどうかしていたのでしょう。</p>
+<p>インライン展開したコードのスタックトレースが、Moose内部ではなく、そのクラスの行やファイルを報告するようになりました。</p>
+
+</div>
+<h2 id="0_62_02">バージョン0.62_02</h2>
+<div id="0_62_02_CONTENT">
+<p>クラスがロールのすべての必須メソッドを用意できなかった場合、エラーメッセージには最初に見つからなかったメソッドだけでなく、見つからなかったすべてのメソッドを載せるようになりました。</p>
+<p>Moose::Objectからコンストラクタを継承していないクラスについては、コンストラクタをインライン展開せず、その旨警告するようになりました。とにかくインライン展開を強制したい場合は、<code>make_immutable</code>に<code>&quot;replace_constructor =&gt; 1</code>を渡してください。</p>
+<p>警告を出したくない場合は<code>inline_constructor =&gt; 1</code>を渡します。</p>
+
+</div>
+<h2 id="0_62">バージョン0.62</h2>
+<div id="0_62_CONTENT">
+<p>（廃止済みの）<code>make_immutable</code>キーワードを削除しました。</p>
+<p>クラスからアトリビュートを削除すると、そのアトリビュートのためにインストールされていた委譲(<code>handles</code>)メソッドも削除されるようになりました。これは正しい振る舞いですが、間違った振る舞いに依存していた方は痛い目にあうかもしれません。</p>
+
+</div>
+<h2 id="0_58">バージョン0.58</h2>
+<div id="0_58_CONTENT">
+<p>ロールがメソッドを追加するときは<code>alias_method</code>ではなく<code>add_method</code>を呼ぶようになりました。また、かならずメソッドオブジェクトを提供して内部でクローニングするようになりました。そのため、ロールが提供したメソッドのソースを追跡したり、間にはさまっているロールを含めて履歴を追うこともできるようになっています。また、クラスのメソッドリストやメソッドマップを見るとロールが追加したメソッドも表示されるようになった、ということでもあります。</p>
+<p>型制約のパラメータや結合の引数はソートされるようになりました。そのため、Int|Strという制約はStr|Intと同じになります。また、渡される型制約の文字列は正規化されて空白の違いはすべて取り除かれるようになりました。これはもっぱら内部の問題なので、外のコードには影響を与えないはずです。</p>
+<p><cite>Moose::Exporter</cite>は、エクスポート元のパッケージがエクスポートしなおしたサブルーチンは削除しないようになりました（MooseはCarp::confessなどをエクスポートしなおしています）。<cite>Moose::Exporter</cite>はユーザが自分で使うために明示的にインポートした関数かどうかを判断できないので、間違ったときには安全が優先されるよう、エクスポートしなおしたサブルーチンは常に残しておくことにしたのです。</p>
+
+</div>
+<h2 id="0_56">バージョン0.56</h2>
+<div id="0_56_CONTENT">
+<p><code>Moose::init_meta</code>はメソッドとして呼ぶようになりました。</p>
+<p>拡張モジュールの作者向けに<cite>Moose::Exporter</cite>と<cite>Moose::Util::MetaRole</cite>という新しいモジュールが追加されました。</p>
+
+</div>
+<h2 id="0_55_01">バージョン0.55_01</h2>
+<div id="0_55_01_CONTENT">
+<p>メタクラスのトレート（と、そのレシピ）が実装されました。</p>
+<pre>  use Moose -traits =&gt; 'Foo'
+
+</pre>
+<p>トレートを使うと、小さな拡張モジュールを書くのが少し楽になります。</p>
+
+</div>
+<h2 id="0_55">バージョン0.55</h2>
+<div id="0_55_CONTENT">
+<p><code>coerce</code>を修正して、<code>subtype</code>のように無名の型を受け付けるようにしました。そのため、このようなことができるようになっています。</p>
+<pre>  coerce $some_anon_type =&gt; from 'Str' =&gt; via { ... };
+
+</pre>
+
+</div>
+<h2 id="0_51">バージョン0.51</h2>
+<div id="0_51_CONTENT">
+<p><code>Moose::Object-&gt;new()</code>に新しいステップとして<code>BUILDARGS</code>を追加しました。</p>
+
+</div>
+<h2 id="0_49">バージョン0.49</h2>
+<div id="0_49_CONTENT">
+<p><code>reader</code>や<code>writer</code>、<code>accessor</code>オプションを独自に定義したときの<code>is =&gt; (ro|rw)</code>の動作を修正しました。詳しくは下の表をご覧ください。</p>
+<pre>  is =&gt; ro, writer =&gt; _foo    # turns into (reader =&gt; foo, writer =&gt; _foo)
+  is =&gt; rw, writer =&gt; _foo    # turns into (reader =&gt; foo, writer =&gt; _foo)
+  is =&gt; rw, accessor =&gt; _foo  # turns into (accessor =&gt; _foo)
+  is =&gt; ro, accessor =&gt; _foo  # error, accesor is rw
+
+</pre>
+
+</div>
+<h2 id="0_45">バージョン0.45</h2>
+<div id="0_45_CONTENT">
+<p><code>before/around/after</code>メソッドモディファイアが正規表現によるメソッド名のマッチングをサポートするようになりました。注意：これはクラスにしか使えません（現時点ではロールはサポートしていませんが……パッチは歓迎です）。</p>
+<p>ロールの<code>has</code>キーワードも、クラスの場合と同じ形式の配列リファレンスを受け付けるようになりました。</p>
+<p>コンストラクタからトリガを実行できると便利なので、読み取り専用のアトリビュートにトリガを用意してもエラーにはならないようになりました。</p>
+<p>パラメータ付きの型のサブタイプはそれ自身がパラメータ指定可能な型になります。</p>
+
+</div>
+<h2 id="0_44">バージョン0.44</h2>
+<div id="0_44_CONTENT">
+<p><code>DEMOLISHALL</code>が<code>$@</code>の値を食ってしまうために正しく動作しない問題を修正しました。それでもまだある意味では<code>$@</code>の値を食っているのですが、これは素のperlの場合も同じです。</p>
+
+</div>
+<h2 id="0_41">バージョン0.41</h2>
+<div id="0_41_CONTENT">
+<p>継承したアトリビュートは、型が(「isa」や「does」で)制限されていない限り拡張できないようになりました。</p>
+<p>このリリースではMoose::Meta::TypeConstraint::*以下のクラスがすべて作り直されました。内部の実装に依存していた場合はコードをよくテストしておいてください。</p>
+
+</div>
+<h2 id="0_40">バージョン0.40</h2>
+<div id="0_40_CONTENT">
+<p>合成済みのロールに由来するアトリビュートに対して「+name」を使う方法をドキュメント化しました。これは理にかなっていますし、よく使われているものですから、公式にサポートしましょう、ということです。</p>
+<p><code>Moose::Meta::Class-&gt;create</code>メソッドがロールをサポートするようになりました。</p>
+<p><code>enum $name =&gt; @values</code>のかわりに<code>enum</code>に配列リファレンスを渡すことで無名のenum型を作ることができるようになりました。</p>
+
+</div>
+<h2 id="0_37">バージョン0.37</h2>
+<div id="0_37_CONTENT">
+<p>メタオブジェクトの<code>make_immutable</code>を呼ぶためのショートカットとして、<code>make_immutable</code>キーワードを追加しました（これは最終的には削除されました！）。</p>
+<p>Mooseで<code>init_arg =&gt; undef</code>できるようになりました。これは「このアトリビュートはコンストラクタのパラメータを受け付けない」という意味です。</p>
+<p>型エラーが用意されたエラーメッセージを使うようになりました（このリリースまではそうではありませんでした）。</p>
+
+</div>
+<h2 id="0_34">バージョン0.34</h2>
+<div id="0_34_CONTENT">
+<p>Mooseはポストモダンなオブジェクトシステムになりました :)</p>
+<p>ロールシステムが完全に作り直されました。100%後方互換ですが、内部は完全に変わっていますので、内部の実装に依存していた場合はよくテストしておくことをおすすめします。</p>
+<p>ロールのメソッドの排除と別名はこのリリースで追加されました。</p>
+<p><cite>Moose::Util::TypeConstraints::OptimizedConstraints</cite>モジュールが追加されました。</p>
+<p>アクセサに値のリストを渡すと（アクセサが期待している値の数は1つのみです）、以前は黙って無視されていましたが、エラーを発生するようになりました。</p>
+
+</div>
+<h2 id="0_26">バージョン0.26</h2>
+<div id="0_26_CONTENT">
+<p>パラメータ付きの型が追加されました。また、型制約システムはかなり大幅に作り直されました。</p>
+<p>「自前のMooseを作る」ためのフレームワークの拡張性やサポートが強化されました。</p>
+
+</div>
+<h2 id="0_25">バージョン0.25以前</h2>
+<div id="0_25_CONTENT">
+<p>正直にいって、こんなに古いMooseは使うべきではありません。非常に多くのバグが直っていますし、スピードも速くなっているのですから、アップグレードしないなんて正気の沙汰ではありません。</p>
+<p>それに、更新履歴をさかのぼるのにもうんざりしました。だから、ここでおしまいにします。続けたい方がいたらどうぞご自由に。</p>
+
+</div>
+<h2 id="-3">作者</h2>
+<div id="CONTENT-3">
+<p>Stevan Little &lt;stevan@iinteractive.com&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

@@ -1,0 +1,200 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Basics::Recipe2 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Basics::Recipe2</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">脚注</a></li>
+<li><a href="#-6">参照</a></li>
+<li><a href="#-7">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Basics::Recipe2 - 簡単な<strong>BankAccount</strong>の例</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package BankAccount;
+  use Moose;
+
+  has 'balance' =&gt; ( isa =&gt; 'Int', is =&gt; 'rw', default =&gt; 0 );
+
+  sub deposit {
+      my ( $self, $amount ) = @_;
+      $self-&gt;balance( $self-&gt;balance + $amount );
+  }
+
+  sub withdraw {
+      my ( $self, $amount ) = @_;
+      my $current_balance = $self-&gt;balance();
+      ( $current_balance &gt;= $amount )
+          || confess &quot;Account overdrawn&quot;;
+      $self-&gt;balance( $current_balance - $amount );
+  }
+
+  package CheckingAccount;
+  use Moose;
+
+  extends 'BankAccount';
+
+  has 'overdraft_account' =&gt; ( isa =&gt; 'BankAccount', is =&gt; 'rw' );
+
+  before 'withdraw' =&gt; sub {
+      my ( $self, $amount ) = @_;
+      my $overdraft_amount = $amount - $self-&gt;balance();
+      if ( $self-&gt;overdraft_account &amp;&amp; $overdraft_amount &gt; 0 ) {
+          $self-&gt;overdraft_account-&gt;withdraw($overdraft_amount);
+          $self-&gt;deposit($overdraft_amount);
+      }
+  };
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>最初のレシピでは、アトリビュートの生成や操作に焦点をあてながら、非常に基本的なMooseのクラスの作り方を説明しました。最初のレシピのオブジェクトは非常にデータ指向で、振る舞い（メソッド）についてはたいしたことをしませんでしたが、このレシピでは最初のレシピのコンセプトを拡張して、本当の振る舞いをいくつか追加します。とりわけここではメソッドの新しい振る舞いを実装するためにメソッドモディファイアを使うやり方を紹介します。</p>
+<p>概要に掲載したクラスは2種類の銀行口座をあらわすものです。単純な銀行口座の方は、残高(balance)というアトリビュートがひとつに、預け入れ(deposit)、引き出し(withdraw)という2つの振る舞いがあります。</p>
+<p>この基本の銀行口座を拡張したのがCheckingAccount(当座預金口座)クラスです。このクラスにはもうひとつ、当座貸越口座(overdraft_account)というアトリビュートを追加しました。また、withdrawメソッドには当座貸越保護の仕組みを追加して、預金残高以上に引き出そうとした場合は当座貸越口座から差額の調整を試みるようにしてあります。(1)</p>
+<p>最初の<strong>BankAccount</strong>クラスではアトリビュートのデフォルト値という新機能が使われています。</p>
+<pre>  has 'balance' =&gt; ( isa =&gt; 'Int', is =&gt; 'rw', default =&gt; 0 );
+
+</pre>
+<p>これは、<strong>BankAccount</strong>には<code>balance</code>というアトリビュートがあり、このアトリビュートには<code>Int</code>型の制約と、読み書き可能なアクセサ、<code>0</code>というデフォルト値が用意されている、という意味。つまり、コンストラクタになにか別の値を渡さない限り、生成された<strong>BankAccount</strong>のインスタンスの<code>balance</code>スロットは<code>0</code>に初期化される、ということです。</p>
+<p><code>deposit</code>メソッドと<code>withdraw</code>メソッドは、昔ながらのプレーンなPerl 5のオブジェクト指向ですから、見ればだいたい意味が通じるでしょう。</p>
+<p>最初のレシピでおわかりの通り、<code>extends</code>キーワードはクラスのスーパークラスを設定するものです（ここでは<strong>CheckingAccount</strong>が<strong>BankAccount</strong>を<code>extends</code>しています）。次の行は、これもまたクラスベースの型制約というアトリビュートの新機能です。</p>
+<pre>  has 'overdraft_account' =&gt; ( isa =&gt; 'BankAccount', is =&gt; 'rw' );
+
+</pre>
+<p>ここまで見てきたのは<code>Int</code>型の制約だけでした。これは（最初のレシピでも見たように）組み込みの型制約ですが、この<code>BankAccount</code>型の制約は新たに（実際には<strong>BankAccount</strong>クラスそのものを作成した瞬間に）定義されたものです。Mooseはプログラムの中で使われているひとつひとつのクラスに対応する型制約を生成するのです。 (2)</p>
+<p>つまり、最初のレシピであれば、<code>Point</code>と<code>Point3D</code>の双方に制約が生成されていましたし、このレシピであれば、<code>BankAccount</code>と<code>CheckingAccount</code>の型制約が自動的に生成されます（Mooseが気を利かせて、クラスと型制約がお互いに同期した状態を保てるようにしてくれているのです）。要するに、Mooseを使うと確実に期待した通りのことができるようになります。(3)</p>
+<p><strong>CheckingAccount</strong>にはもうひとつ、<code>before</code>というメソッドモディファイアも見られます。</p>
+<pre>  before 'withdraw' =&gt; sub {
+      my ( $self, $amount ) = @_;
+      my $overdraft_amount = $amount - $self-&gt;balance();
+      if ( $self-&gt;overdraft_account &amp;&amp; $overdraft_amount &gt; 0 ) {
+          $self-&gt;overdraft_account-&gt;withdraw($overdraft_amount);
+          $self-&gt;deposit($overdraft_amount);
+      }
+  };
+
+</pre>
+<p>最初のレシピにあった<code>after</code>モディファイアと同じく、スーパークラスのメソッド（この場合は<code>BankAccount-&gt;withdraw</code>）を呼ぶのはMooseの方でしてくれます。</p>
+<p><code>before</code>モディファイアは（当然ながら）スーパークラスのコードが実行される「前に」実行されます。ここでは、<code>before</code>モディファイアは当座貸越保護を実装するために、まずは当座預金口座の残高を確認しています。残高がない（ただし当座貸越口座は利用できる）場合は、必要な額を当座預金口座に移します。(4)</p>
+<p>最初のレシピのメソッドモディファイアと同じく、ここでも<code>SUPER::</code>を使えば同じ効果を得ることはできます。</p>
+<pre>  sub withdraw {
+      my ( $self, $amount ) = @_;
+      my $overdraft_amount = $amount - $self-&gt;balance();
+      if ( $self-&gt;overdraft_account &amp;&amp; $overdraft_amount &gt; 0 ) {
+          $self-&gt;overdraft_account-&gt;withdraw($overdraft_amount);
+          $self-&gt;deposit($overdraft_amount);
+      }
+      $self-&gt;SUPER::withdraw($amount);
+  }
+
+</pre>
+<p>メソッドモディファイアを使うアプローチの利点は、<code>CheckingAccount-&gt;withdraw</code>を書くときに<code>SUPER::withdraw</code>を呼んだり<code>$amount</code>引数を渡したりするのを覚えておく必要がないことです。</p>
+<p>ただし、これは忘れっぽいプログラマにとって便利な機能というだけではありません。メソッドモディファイアを使うと、サブクラスがスーパークラスの変化を受けづらくなります。たとえば、<strong>BankAccount-&gt;withdraw</strong>になんらかの引数が追加されたとします。<code>SUPER::withdraw</code>を使っている場合、<strong>CheckingAccount-&gt;withdraw</strong>は追加された引数を正しく渡せなくなりますが、メソッドモディファイアを使っていれば自動的にすべての引数を正しく渡せます。</p>
+<p>最初のレシピと同じく、オブジェクトのインスタンス化には名前付きのパラメータを受け取れる<code>new</code>メソッドを使っています。</p>
+<pre>  my $savings_account = BankAccount-&gt;new( balance =&gt; 250 );
+
+  my $checking_account = CheckingAccount-&gt;new(
+      balance           =&gt; 100,
+      overdraft_account =&gt; $savings_account,
+  );
+
+</pre>
+<p>これもまた最初のレシピと同じく、<cite>t/000_recipes/moose_cookbook_basics_recipe2.t</cite>というテストファイルにはもっと詳細な例があります。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>このレシピでは、より「現実の世界」に近いユースケースを使って、最初のレシピの基本的なコンセプトを拡張しました。</p>
+
+</div>
+<h2 id="-5">脚注</h2>
+<div id="CONTENT-5">
+<dl>
+	<dt>(1)</dt>
+	<dd>
+		<p>よく見てみると、ここでは円形ループが起こりそうになっていることに気がつかれるかもしれません。もっと賢くするなら、当座預金口座と当座貸越口座の間で偶発的にループが発生してしまわないようにする必要があるでしょう。</p>
+	</dd>
+	<dt>(2)</dt>
+	<dd>
+		<p>実際には、この型制約の生成はモジュールのロード順の影響を受けます。もっと複雑な例になると、クラスに対応する型制約がロードされないうちにクラスの型を明示的に宣言する必要がある場合が出てくるかもしれません。</p>
+	</dd>
+	<dt>(3)</dt>
+	<dd>
+		<p>Mooseはクラスのis-a関係を型制約の階層構造の中に持ち込むことはしません。クラスの型制約は<code>Object</code>のサブタイプにすぎないとみなして、型チェックを特殊化し、サブクラスを受け付けるようにします。つまり、<strong>CheckingAccount</strong>のインスタンスは<code>BankAccount</code>型の制約を満たすわけです。詳しくは<cite>Moose::Util::TypeConstraints</cite>のドキュメントをご覧ください。</p>
+	</dd>
+	<dt>(4)</dt>
+	<dd>
+		<p>当座貸越口座に必要な残高がない場合は、エラーが発生します。もちろん当座貸越口座にも当座貸越保護を持たせることもできるでしょう。注釈(1)をご覧ください。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-6">参照</h2>
+<div id="CONTENT-6">
+<dl>
+	<dt>謝辞</dt>
+	<dd>
+		<p>このレシピのBankAccountの例は『実践Common Lisp』の該当の章から直接引用したものです。</p>
+		<p><a href="http://www.gigamonkeys.com/book/object-reorientation-generic-functions.html">http://www.gigamonkeys.com/book/object-reorientation-generic-functions.html</a></p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-7">作者</h2>
+<div id="CONTENT-7">
+<p>Stevan Little &lt;stevan@iinteractive.com&gt;</p>
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

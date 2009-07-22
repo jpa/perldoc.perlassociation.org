@@ -1,0 +1,130 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Extending::Recipe4 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Extending::Recipe4</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#MyApp_Mooseish">MyApp::Mooseishを使う</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Extending::Recipe4 - Moose.pmのようにMoose風のシュガー関数を提供する</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package MyApp::Mooseish;
+
+  use Moose ();
+  use Moose::Exporter;
+
+  Moose::Exporter-&gt;setup_import_methods(
+      with_caller =&gt; ['has_table'],
+      also        =&gt; 'Moose',
+  );
+
+  sub init_meta {
+      shift;
+      return Moose-&gt;init_meta( @_, metaclass =&gt; 'MyApp::Meta::Class' );
+  }
+
+  sub has_table {
+      my $caller = shift;
+      $caller-&gt;meta-&gt;table(shift);
+  }
+
+  package MyApp::Meta::Class;
+  use Moose;
+
+  extends 'Moose::Meta::Class';
+
+  has 'table' =&gt; ( is =&gt; 'rw' );
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>このレシピでは<cite>Moose::Cookbook::Extending::Recipe1</cite>で見た<cite>Moose::Exporter</cite>の使い方を拡張して、自前のオブジェクトベースクラスを用意するかわりに、自前のメタクラスのクラスを用意して、<code>has_table</code>というシュガー関数をエクスポートします。</p>
+<p>上記のコードを用意すれば、<code>use Moose</code>はすべて<code>use MyApp::Mooseish</code>で置き換えることができます。同様に、<code>no Moose</code>も<code>no MyApp::Mooseish</code>で置き換えられます。</p>
+<p><code>with_caller</code>パラメータには、エクスポートする前にラップしておきたい関数のリストを指定します。ラッパが保証するのは、関数の第1引数がインポートするパッケージ名になることだけです（だから、<code>my&nbsp;$caller&nbsp;=&nbsp;shift;</code>とできます）。</p>
+<p><cite>Moose::Exporter</cite>のAPIについては<cite>Moose::Exporter</cite>のドキュメントをご覧ください。</p>
+
+</div>
+<h2 id="MyApp_Mooseish">MyApp::Mooseishを使う</h2>
+<div id="MyApp_Mooseish_CONTENT">
+<p>ここまで見てきたコードの目的は、Mooseのようなインタフェースを提供することでした。実際にはこのような使い方をします。</p>
+<pre>  package MyApp::User;
+
+  use MyApp::Mooseish;
+
+  has_table 'User';
+
+  has 'username' =&gt; ( is =&gt; 'ro' );
+  has 'password' =&gt; ( is =&gt; 'ro' );
+
+  sub login { ... }
+
+  no MyApp::Mooseish;
+
+</pre>
+<p><code>use MyApp::Mooseish</code>すれば、通常のMooseのシュガー関数（<code>has()</code>や<code>with()</code>など）もすべて利用できます。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>拡張モジュールにシュガー関数を用意すると、よりMooseっぽく見えるようになります。拡張モジュールの例としては、<cite>Fey::ORM</cite>をご覧ください。</p>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

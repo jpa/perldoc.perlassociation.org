@@ -1,0 +1,317 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual::Concepts Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual::Concepts</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#Moose_Perl">Mooseのコンセプト（と「従来の」Perl）</a>
+<ul>
+<li>
+<ul><li><a href="#-2">クラス</a></li>
+<li><a href="#-3">アトリビュート</a></li>
+<li><a href="#-4">メソッド</a></li>
+<li><a href="#-5">ロール</a></li>
+<li><a href="#-6">メソッドモディファイア</a></li>
+<li><a href="#-7">型</a></li>
+<li><a href="#-8">委譲</a></li>
+<li><a href="#-9">コンストラクタ</a></li>
+<li><a href="#-10">デストラクタ</a></li>
+<li><a href="#-11">オブジェクトのインスタンス</a></li>
+<li><a href="#Moose_Perl-2">Mooseと従来のPerlの違いのまとめ</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-12">メタって何なの</a></li>
+<li><a href="#-13">どうしても自分のやり方でしたいときは</a></li>
+<li><a href="#-14">次にするべきことは</a></li>
+<li><a href="#-15">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual::Concepts - Mooseによるオブジェクト指向のコンセプト</p>
+
+</div>
+<h2 id="Moose_Perl">Mooseのコンセプト（と「従来の」Perl）</h2>
+<div id="Moose_Perl_CONTENT">
+<p>昔はパッケージとクラス、アトリビュートとメソッド、コンストラクタとメソッド等々の違いなんてあまり考えたことはなかったかもしれません。でも、Mooseの世界では、これらはすべて（たとえ裏では昔ながらのPerlで実装されているにしても）概念的には別々のものです。</p>
+<p>私たちのメタオブジェクトプロトコル（MOP）はこれらの概念それぞれに対して明確に定義されたイントロスペクション機能を用意しています（Mooseはそのそれぞれに別のシュガー関数を用意しています）。また、Mooseはロールやメソッドモディファイア、宣言的な委譲といった概念も新たに導入しています。</p>
+<p>Mooseの手ほどきとして、まずはこれらの概念がMoose語ではどういう意味になるのか、昔ながらのPerl 5のオブジェクト指向ではどのように使われてきたのかを調べてみましょう。</p>
+
+</div>
+<h3 id="-2">クラス</h3>
+<div id="CONTENT-2">
+<p>パッケージの中で「use Moose」すると、そのパッケージはクラスになります。もっともシンプルなクラスにはアトリビュートやメソッドしかありませんが、ロールやメソッドモディファイアなどを含めることもできます。</p>
+<p>クラスには0個以上の<strong>アトリビュート</strong>があります。</p>
+<p>クラスには0個以上の<strong>メソッド</strong>があります。</p>
+<p>クラスには0個以上のスーパークラス(親クラス)があります。クラスはスーパークラスを継承します。</p>
+<p>クラスには0個以上の<strong>メソッドモディファイア</strong>があります。このモディファイアは、そのクラスのメソッドだけでなく、祖先から継承したメソッドにも適用できます。</p>
+<p>クラスには0個以上の<strong>ロール</strong>があります（取り込めます）。</p>
+<p>クラスには<strong>コンストラクタ</strong>と<strong>デストラクタ</strong>があります。いずれもMooseが「ただで」提供してくれるものです。</p>
+<p><strong>コンストラクタ</strong>はクラスのアトリビュートに対応した名前付きのパラメータを受け取り、それを使って<strong>オブジェクトのインスタンス</strong>を初期化します。</p>
+<p>クラスには<strong>メタクラス</strong>があります。メタクラスには<strong>メタアトリビュート</strong>、<strong>メタメソッド</strong>、<strong>メタロール</strong>があります。メタクラスはそのクラスを説明するものです。</p>
+<p>クラスはふつう「People」や「Users」のように複数の名詞が所属するカテゴリー名になぞらえられます。</p>
+<pre>  package Person;
+
+  use Moose;
+  # now it's a Moose class!
+
+</pre>
+
+</div>
+<h3 id="-3">アトリビュート</h3>
+<div id="CONTENT-3">
+<p>アトリビュートは、クラスを定義するプロパティです。アトリビュートには「かならず」名前があります。また、ほかのさまざまなプロパティを「持つこともあります」。</p>
+<p>そのようなプロパティとしては、読み書きのフラグや、<strong>型</strong>、アクセサメソッドの名前、<strong>委譲</strong>、デフォルト値などがあります。</p>
+<p>アトリビュートはメソッド「ではありません」が、アトリビュートを定義するとさまざまなアクセサメソッドが生成されます。ふつうのアトリビュートであれば最低でもかならず読み取り用のアクセサメソッドがありますし、多くのアトリビュートには書き込み用のメソッドやクリア用のメソッド、（「値がセットされていますか」という）断定用のメソッドなどもあるものです。</p>
+<p>アトリビュートには<strong>委譲</strong>が定義されていることもあります。これは委譲のマッピングに基づいて追加のメソッドを生成するものです。</p>
+<p>デフォルトでは、Mooseはアトリビュートをオブジェクトのインスタンス（これはハッシュリファレンスです）の中に保存しますが、「これはMooseベースのクラスの作者には見えないことになっています」!　Mooseのアトリビュートは「不透明な」<strong>オブジェクトのインスタンス</strong>の「プロパティ」であると考えておくのがいちばんです。これらのプロパティには、明確に定義されたアクセサメソッドを通じてアクセスできます。</p>
+<p>アトリビュートはそのクラスに所属しているメンバなら持っている、というものです（たとえば、Peopleクラスのメンバなら姓と名を持っていますし、Usersクラスのメンバであればパスワードと最終ログイン日時を持っています）。</p>
+<pre>  has 'first_name' =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Str',
+  );
+
+</pre>
+
+</div>
+<h3 id="-4">メソッド</h3>
+<div id="CONTENT-4">
+<p><strong>メソッド</strong>は非常に単純。クラスの中で定義したサブルーチンはすべてメソッドです。</p>
+<p><strong>メソッド</strong>は動詞に対応するもので、オブジェクトができることをあらわします（たとえば、Userならログインできます）。</p>
+<pre>  sub login { ... }
+
+</pre>
+
+</div>
+<h3 id="-5">ロール</h3>
+<div id="CONTENT-5">
+<p>ロールは、クラスが「果たす」役割をあらわすものです。また、クラスがロールを「消費する」という言い方もします。たとえば、MachineクラスならBreakableという役割を果たすかもしれません。Boneクラスもそうかもしれません。ロールは複数の無関係なクラスが共通して持つ（「壊せる」とか「色がついている」という）概念を定義するのに使います。</p>
+<p>ロールには0個以上の<strong>アトリビュート</strong>があります。</p>
+<p>ロールには0個以上の<strong>メソッド</strong>があります。</p>
+<p>ロールには0個以上の<strong>メソッドモディファイア</strong>があります。</p>
+<p>ロールには0個以上の<strong>必須メソッド</strong>があります。</p>
+<p>必須メソッドはそのロールが実装するものではありません。必須メソッドは「このロールを使うにはかならずこのメソッドを実装する必要がある」という意味です。</p>
+<p>ロールには0個以上の<strong>排除ロール</strong>があります。</p>
+<p>排除ロールというのは、その排除しようとしているロールとは合成できないロールのことです。</p>
+<p>ロールはクラス（や、ほかのロール）に合成されるものです。ロールをクラスに合成すると、そのアトリビュートやメソッドはそのクラスに「埋め込まれます（フラット化）」。ロールが継承階層にあらわれることは「ありません」。ロールを合成すると、そのアトリビュートやメソッドは「その取り込んだクラスの中で」定義されていたかのように見えます。</p>
+<p>ロールは、ほかのオブジェクト指向言語でいうミックスインやインタフェースに似たものです。</p>
+<pre>  package Breakable;
+
+  use Moose::Role;
+
+  has is_broken =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Bool',
+  );
+
+  requires 'break';
+
+  before 'break' =&gt; {
+      my $self = shift;
+
+      $self-&gt;is_broken(1);
+  };
+
+</pre>
+
+</div>
+<h3 id="-6">メソッドモディファイア</h3>
+<div id="CONTENT-6">
+<p><strong>メソッドモディファイア</strong>は指定したメソッドが呼ばれたときに呼ばれる割り込みのことです。たとえば、「<code>login()</code>を呼ぶ前にこのモディファイアを先に呼んでほしい」のように言えるわけです。モディファイアには「before」、「after」、「around」、「augment」のようにさまざまな種類のものがあります。また、ひとつのメソッドに複数のモディファイアを適用することもできます。</p>
+<p>メソッドモディファイアはよく親クラスのメソッドをオーバーライドするかわりに使われます。また、ロールの中でも、ロールを取り込む側のクラスのメソッドを修正する手段として利用されます。</p>
+<p>メソッドモディファイアは、裏では単に指定したメソッドが呼ばれる前やあとに（あるいはそれを取り囲むように）呼ばれる昔ながらのPerlのサブルーチンにすぎません。</p>
+<pre>  before 'login' =&gt; sub {
+      my $self = shift;
+      my $pw   = shift;
+
+      warn &quot;Called login() with $pw\n&quot;;
+  };
+
+</pre>
+
+</div>
+<h3 id="-7">型</h3>
+<div id="CONTENT-7">
+<p>Mooseには（ミニチュアの）型システムもあります。この型システムを使うと、アトリビュートに型を定義できるようになります。Mooseには、<code>Str</code>や<code>Num</code>、<code>Bool</code>、<code>HashRef</code>のように、Perlに用意されている型に基づいた組み込みの型がひと揃い用意されています。</p>
+<p>また、アプリケーションで使われているクラスの名前はすべて、型の名前として使うことができます。</p>
+<p>最後に、サブタイプとして、あるいは完全に新しい型として、独自の制約を持つ自前の型を定義することもできます。たとえば、<code>Int</code>のサブタイプとして、正数しか許さない<code>PosInt</code>という型を定義できます。</p>
+
+</div>
+<h3 id="-8">委譲</h3>
+<div id="CONTENT-8">
+<p>Mooseのアトリビュートには委譲を宣言的に定義する構文が用意されています。委譲というのは、実際の仕事はアトリビュートのメソッドを呼び出して行わせるメソッドのことです。</p>
+
+</div>
+<h3 id="-9">コンストラクタ</h3>
+<div id="CONTENT-9">
+<p>コンストラクタは<strong>オブジェクトのインスタンス</strong>を生成するものです。従来のPerlでは<code>new()</code>というメソッドを定義して、そこでリファレンスを<code>bless</code>するのがふつうでした。</p>
+<p>Mooseはこの<code>new()</code>というメソッドを生成して適切な処理をしてくれます。自分でコンストラクタを定義する必要はまったくありません!</p>
+<p>場合によってはオブジェクトを生成するときに何かしたいことがあります。そのようなときはクラスに<code>BUILD()</code>メソッドを用意すると、Mooseが新しいオブジェクトを生成したあとでそのメソッドを呼んでくれます。</p>
+
+</div>
+<h3 id="-10">デストラクタ</h3>
+<div id="CONTENT-10">
+<p>これはオブジェクトのインスタンスがスコープの外に出たときに呼ばれる特殊なメソッドです。必要があれば、このメソッドの中でクラスに特殊な処理をさせられます（ただし、ふつうはそのようなことをする必要はありません）。</p>
+<p>これは、従来のPerl 5では<code>DESTROY()</code>メソッドですが、Mooseでは<code>DEMOLISH()</code>メソッドになります。</p>
+
+</div>
+<h3 id="-11">オブジェクトのインスタンス</h3>
+<div id="CONTENT-11">
+<p>オブジェクトのインスタンスは、たとえば具体的なひとりのPersonやUserのように、そのクラスの「カテゴリー」に属する具体的な名詞にあたります。インスタンスはクラスの<strong>コンストラクタ</strong>によって生成されます。</p>
+<p>インスタンスはアトリビュートの値を持っています（たとえば、具体的な人物には（具体的な）姓と名があります）。</p>
+<p>インスタンスは、従来のPerl 5ではblessされたハッシュリファレンスであることが多いですが、Mooseの場合、オブジェクトのインスタンスが実際にどうなっているかを知る必要はまったくありません（はいはい。Mooseの場合でもふつうはblessされたハッシュリファレンスです）。</p>
+
+</div>
+<h3 id="Moose_Perl-2">Mooseと従来のPerlの違いのまとめ</h3>
+<div id="Moose_Perl_CONTENT-2">
+<dl>
+	<dt>* クラス</dt>
+	<dd>
+		<p>シンボルテーブルの中を漁る以外にはイントロスペクションがないパッケージ。</p>
+		<p>Mooseを使うと、明確に定義された宣言とイントロスペクションを利用できます。</p>
+	</dd>
+	<dt>* アトリビュート</dt>
+	<dd>
+		<p>手書きのアクセサメソッド。シンボルテーブルのハック。あるいは<code>Class::Accessor</code>のようなヘルパーモジュール。</p>
+		<p>Mooseでは宣言的に定義され、メソッドとは明確に区別されています。</p>
+	</dd>
+	<dt>* メソッド</dt>
+	<dd>
+		<p>これはMooseでも従来のPerlとだいたい同じです。</p>
+	</dd>
+	<dt>* ロール</dt>
+	<dd>
+		<p><code>Class::Trait</code>や<code>Class::Role</code>、あるいは<code>mixin.pm</code>かも。</p>
+		<p>Mooseではコア機能に含まれています。ほかのすべてのものと同様にイントロスペクション可能です。</p>
+	</dd>
+	<dt>* メソッドモディファイア</dt>
+	<dd>
+		<p>昔はシンボルテーブルを本気でいじらないとできませんでした。（少なくともPerl 5では）おそらくこれまでに見たことのある人はいなかったはずです。</p>
+	</dd>
+	<dt>* 型</dt>
+	<dd>
+		<p><code>new()</code>メソッドやアクセサの中で手書きのパラメータチェック。</p>
+		<p>Mooseでは宣言的に型を定義しておいて、アトリビュートの中でその型を名指しで利用するようになっています。</p>
+	</dd>
+	<dt>* 委譲</dt>
+	<dd>
+		<p><code>Class::Delegation</code> or <code>Class::Delegator</code>, but probably even more
+hand-written code.</p>
+		<p>Mooseではこれも宣言的にできます。</p>
+	</dd>
+	<dt>* コンストラクタ</dt>
+	<dd>
+		<p><code>new()</code>メソッド。その中でリファレンスを<code>bless</code>します。</p>
+		<p>Mooseでクラスを定義すればただでついてきます。</p>
+	</dd>
+	<dt>* デストラクタ</dt>
+	<dd>
+		<p><code>DESTROY()</code>メソッド。</p>
+		<p>Mooseでは<code>DEMOLISH()</code>と呼ばれます。</p>
+	</dd>
+	<dt>* オブジェクトのインスタンス</dt>
+	<dd>
+		<p>blessされたリファレンス（ふつうはハッシュリファレンスです）。</p>
+		<p>Mooseでは中身は見えませんが、クラスによって定義されたアトリビュートやメソッドがたくさんあります。</p>
+	</dd>
+	<dt>* 不変化</dt>
+	<dd>
+		<p>Mooseには「不変化」と呼ばれる機能があります。クラスを不変化すると、メソッドやアトリビュート、ロールなどの追加は済んだとみなされ、Mooseがその場限りの非常に汚いコードを生成するテクニックを駆使してクラスを最適化し、オブジェクトの生成などを高速化します。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-12">メタって何なの</h2>
+<div id="CONTENT-12">
+<p>メタクラスはクラスを説明するクラスです。Mooseを使って定義したクラスにはすべて<code>meta()</code>メソッドが用意されるのですが、このメソッドが返す<cite>Moose::Meta::Class</cite>オブジェクトのイントロスペクションAPIを使うと、そのクラスについての情報を調べることができます。</p>
+<pre>  my $meta = User-&gt;meta();
+
+  for my $attribute ( $meta-&gt;get_all_attributes ) {
+      print $attribute-&gt;name(), &quot;\n&quot;;
+
+      if ( $attribute-&gt;has_type_constraint ) {
+          print &quot;  type: &quot;, $attribute-&gt;type_constraint-&gt;name, &quot;\n&quot;;
+      }
+  }
+
+  for my $method ( $meta-&gt;get_all_methods ) {
+      print $method-&gt;name, &quot;\n&quot;;
+  }
+
+</pre>
+<p>メタクラスは、先ほど定義した概念のほとんどすべてにあります（だから、<cite>Moose::Meta::Class</cite>や<cite>Moose::Meta::Attribute</cite>、<cite>Moose::Meta::Method</cite>、<cite>Moose::Meta::Role</cite>、<cite>Moose::Meta::TypeConstraint</cite>、<cite>Moose::Meta::Instance</cite>などがあるわけです）。</p>
+
+</div>
+<h2 id="-13">どうしても自分のやり方でしたいときは</h2>
+<div id="CONTENT-13">
+<p>Mooseのすごいところのひとつは、深入りしていって何か「間違ったやり方」をしているものを見つけたとしても、メタクラスを拡張すれば変えられることです。たとえば、配列リファレンスをベースにしたオブジェクトを持てるようにもできますし、コンストラクタを厳密に（知らないパラメータは許さないように！）することもできます。アトリビュートのアクセサの命名規則を定義することもできますし、クラスをシングルトンにすることも、それ以上のことだってできるのです。</p>
+<p>こういった拡張モジュールの多くは、驚くほど少ないコードしか要求しませんし、一度作ってしまえば、「自分ならこうする」というコードをまた手書きする必要はなくなります（そのかわりに自分の好きな拡張モジュールをロードしてしまえばよいのです）。</p>
+<pre>  package MyWay::User;
+
+  use Moose;
+  use MooseX::StrictConstructor
+  use MooseX::MyWay;
+
+  has ...;
+
+</pre>
+
+</div>
+<h2 id="-14">次にするべきことは</h2>
+<div id="CONTENT-14">
+<p>Mooseの売り文句に納得していただけたら、今度は本当に使い方を学ぶ番です。</p>
+<p>Mooseをそのまま従来のPerl 5のオブジェクト指向のコードで書き直したらどうなるかを見たい方は、<cite>Moose::Manual::Unsweetened</cite>をご覧ください。「Mooseの流儀」の一端を手っ取り早く理解するには便利かもしれません。</p>
+<p>あるいは、それは飛ばして、まっすぐ<cite>Moose::Manual::Classes</cite>や、残りの<cite>Moose::Manual</cite>に行ってもよいでしょう。</p>
+<p>そのあとは、<cite>Moose::Cookbook</cite>から始めることをおすすめします。基本のセクションのレシピをすべて読み終えたら、Mooseの動作や、基本的なオブジェクト指向の機能についてはすべて、かなりよく理解できているはずです。</p>
+<p>そのあとは、ロールのレシピをご覧ください。本気で知りたいのであれば、そのままメタや拡張モジュールについてのレシピも読んでいきましょう。ただし、これらはおもにMooseの達人になりたい人や、Mooseの挙動を変えたい人向けのものです。</p>
+
+</div>
+<h2 id="-15">作者</h2>
+<div id="CONTENT-15">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2008-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

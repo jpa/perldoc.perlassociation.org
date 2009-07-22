@@ -1,0 +1,139 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Basics::Recipe11 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Basics::Recipe11</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Basics::Recipe11 - Mooseを使っていないベースクラスを拡張する</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package My::DateTime;
+
+  use Moose;
+  extends qw( DateTime Moose::Object );
+
+  use DateTime::Calendar::Mayan;
+
+  has 'mayan_date' =&gt; (
+      is        =&gt; 'ro',
+      isa       =&gt; 'DateTime::Calendar::Mayan',
+      init_arg  =&gt; undef,
+      lazy      =&gt; 1,
+      builder   =&gt; '_build_mayan_date',
+      clearer   =&gt; '_clear_mayan_date',
+      predicate =&gt; 'has_mayan_date',
+  );
+
+  sub new {
+      my $class = shift;
+
+      my $obj = $class-&gt;SUPER::new(@_);
+
+      return $class-&gt;meta-&gt;new_object(
+          __INSTANCE__ =&gt; $obj,
+          @_,
+      );
+  }
+
+  after 'set' =&gt; sub {
+      $_[0]-&gt;_clear_mayan_date;
+  };
+
+  sub _build_mayan_date {
+      DateTime::Calendar::Mayan-&gt;from_object( object =&gt; $_[0] );
+  }
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>このレシピではMooseを利用してMooseベースではない親クラスをサブクラス化する方法を説明します。このレシピでうまく行くのは親クラスがblessされたハッシュリファレンスの場合のみです。親クラスがちょっと変わったことをしている場合は<cite>MooseX::InsideOut</cite>を試してみてください。</p>
+<p>また、<cite>MooseX::NonMoose</cite>を試してみてもよいかもしれません。これを使うと面倒な作業はすべてやってくれます。</p>
+<p>いくつか注釈を入れておきたい箇所があります。</p>
+<pre>  use Moose;
+  extends qw( DateTime Moose::Object );
+
+</pre>
+<p>まず、いつものように<code>use Moose</code>します。こうするとアトリビュートを宣言したり、おなじみのシュガー関数をすべて利用できるようになります。</p>
+<p><code>extends</code>の宣言には<cite>DateTime</cite>だけでなく、明示的に<cite>Moose::Object</cite>を入れておきます。こうすると、<code>does</code>のように<cite>Moose::Object</cite>が提供しているメソッドも使えるようになります。</p>
+<p>コンストラクタにはMooseを使っていない親クラスを使うときに特有のハック／パターン（ハックたん？）が見られます。</p>
+<pre>  sub new {
+      my $class = shift;
+
+      my $obj = $class-&gt;SUPER::new(@_);
+
+      return $class-&gt;meta-&gt;new_object(
+          __INSTANCE__ =&gt; $obj,
+          @_,
+      );
+  }
+
+</pre>
+<p>ここでは明示的に<code>$class-&gt;meta-&gt;new_object</code>を呼んで、作成済みのオブジェクトを<code>__INSTANCE__</code>キーとともに渡しています。内部的にはMooseが既存のオブジェクトを受け取り、あればサブクラスで定義されているアトリビュートの初期化を行います。</p>
+<p><code>after</code>モディファイアは期待通りの動作をします。<code>set</code>がMooseを使っていない親クラスで定義されていても問題ありません。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>Mooseは、ここで紹介したパターンにしたがえば、Mooseを使っていないクラスともうまく共存できます。アトリビュートの宣言、メソッドモディファイア、（新しいアトリビュートの）型制約、ロールといったMooseの力は、サブクラスの中でもすべて利用できます。</p>
+<p>ただし、親クラスの「アトリビュート」はMooseのアトリビュートではありませんから、簡単にはオーバーライドできません。また、コンストラクタをインライン展開することもできません。メタクラスのオブジェクトコンストラクタを明示的に利用する必要があるためです。</p>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

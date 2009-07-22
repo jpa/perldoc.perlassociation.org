@@ -1,0 +1,119 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Extending::Recipe3 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Extending::Recipe3</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#MyApp_UseMyBase">MyApp::UseMyBaseを使う</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Extending::Recipe3 - 別のベースオブジェクトクラスを用意する</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package MyApp::Base;
+  use Moose;
+
+  extends 'Moose::Object';
+
+  before 'new' =&gt; sub { warn &quot;Making a new &quot; . $_[0] };
+
+  no Moose;
+
+  package MyApp::UseMyBase;
+  use Moose ();
+  use Moose::Exporter;
+
+  Moose::Exporter-&gt;setup_import_methods( also =&gt; 'Moose' );
+
+  sub init_meta {
+      shift;
+      return Moose-&gt;init_meta( @_, base_class =&gt; 'MyApp::Base' );
+  }
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>よくある拡張モジュールとしては、ベースクラスの代用品を提供するものがあります。<code>MyApp::Base</code>を用意して、アプリケーションのすべてのクラスに<code>extends&nbsp;'MyApp::Base'</code>を追加するのもひとつのやり方ですが、これはかなり面倒です。そのかわりに<code>MyApp::Base</code>をベースオブジェクトクラスにしてくれるMooseもどきのモジュールを作りましょう。</p>
+<p>そうすれば、<code>use&nbsp;Moose</code>と書くかわりに<code>use&nbsp;MyApp::UseMyBase</code>と書くことができるようになります。</p>
+<p>この例のベースクラスは新しいオブジェクトを生成するたびにデバッグ用の情報を出力しますが、みなさんが自分でベースクラスを作るときはもっとおもしろい使い方を考えてみてください。</p>
+<p>ここでは<cite>Moose::Exporter</cite>の魔法を利用します。<code>Moose::Exporter-&gt;setup_import_methods( also =&gt; 'Moose' )</code>を呼ぶと、<code>import</code>メソッドと<code>unimport</code>メソッドを用意してくれます。<code>also =&gt; 'Moose'</code>の部分は、Mooseがエクスポートするものはすべてエクスポートしてほしい、という意味です。</p>
+<p>ここで作成された<code>import</code>メソッドは、私たちの<code>init_meta</code>メソッドを呼び出し、<code>for_caller =&gt; $caller</code>という引数を渡します。この<code>$caller</code>は、実際にはじめてimportを実行したクラスになります。</p>
+<p><cite>Moose::Exporter</cite>のAPIについては<cite>Moose::Exporter</cite>のドキュメントをご覧ください。</p>
+
+</div>
+<h2 id="MyApp_UseMyBase">MyApp::UseMyBaseを使う</h2>
+<div id="MyApp_UseMyBase_CONTENT">
+<p>実際に私たちの新しいベースクラスを使いたいときは単に<code>Moose</code>の「かわり」に<code>MyApp::UseMyBase</code>をuseしてください。これで、Mooseのすべてのシュガー関数と、私たちの新しいベースクラスが利用できるようになります。</p>
+<pre>  package Foo;
+
+  use MyApp::UseMyBase;
+
+  has 'size' =&gt; ( is =&gt; 'rw' );
+
+  no MyApp::UseMyBase;
+
+</pre>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>単純なベースクラスだったわりにはずいぶん大げさな魔法を使いましたが、ベースクラスを拡張するモジュールにはよくメタクラスのトレートを合成したくなるものですし、そのような時にはこのテクニックが役に立ちます。</p>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

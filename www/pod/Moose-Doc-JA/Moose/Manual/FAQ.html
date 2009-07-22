@@ -1,0 +1,359 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual::FAQ Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual::FAQ</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">よくある質問</a>
+<ul>
+<li>
+<ul><li><a href="#-3">モジュールの安定度</a>
+<ul><li><a href="#Moose">Mooseは「実用レベルに達して」いますか</a></li>
+<li><a href="#Moose_API">MooseのAPIは安定していますか</a></li>
+<li><a href="#Moose-2">Mooseは遅いと聞きましたが本当ですか</a></li>
+<li><a href="#Moose_1_0">Moose 1.0はいつ出ますか</a></li>
+</ul>
+</li>
+<li><a href="#-4">コンストラクタ</a>
+<ul><li><a href="#Moose-3">Mooseで独自のコンストラクタを書くにはどうすればよいですか</a></li>
+<li><a href="#Moose_Moose">Mooseを使っていないコンストラクタをMooseで利用するにはどうすればよいですか</a></li>
+</ul>
+</li>
+<li><a href="#-5">アクセサ</a>
+<ul><li><a href="#Moose_get_set">Mooseにgetアクセサとsetアクセサを使うよう指示するにはどうすればよいですか</a></li>
+<li><a href="#-6">アクセサの中で値をオブジェクトにしたり、その逆を行うにはどうすればよいですか</a></li>
+<li><a href="#-7">アトリビュートは作ったけれど、アクセサはどこにあるの</a></li>
+</ul>
+</li>
+<li><a href="#-8">メソッドモディファイア</a>
+<ul><li><a href="#code_before_code_code_code"><code>before</code>を使って<code>@_</code>の値を変更するにはどうすればよいですか</a></li>
+<li><a href="#code_before_code"><code>before</code>を使ってメソッドの実行を中断できますか</a></li>
+<li><a href="#code_after_code"><code>after</code>モディファイアの中で返り値が見られないのはなぜですか</a></li>
+</ul>
+</li>
+<li><a href="#-9">型制約</a>
+<ul><li><a href="#-10">型制約に独自のエラーメッセージを用意するにはどうすればよいですか</a></li>
+<li><a href="#-11">型制約のチェックを無効にすることはできますか</a></li>
+</ul>
+</li>
+<li><a href="#-12">ロール</a>
+<ul><li><a href="#BUILD">合成したロールでBUILDが呼ばれないのはなぜですか</a></li>
+<li><a href="#-13">トレートとはなんですか。ロールとはどう違うのですか</a></li>
+</ul>
+</li>
+<li><a href="#Moose-4">Mooseとサブルーチンアトリビュート</a>
+<ul><li><a href="#-14">スーパークラスから継承したサブルーチンアトリビュートが動かないのはなぜですか</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-15">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual::FAQ - Mooseについてのよくある質問</p>
+
+</div>
+<h2 id="-2">よくある質問</h2>
+<div id="CONTENT-2">
+
+</div>
+<h3 id="-3">モジュールの安定度</h3>
+<div id="CONTENT-3">
+
+</div>
+<h4 id="Moose">Mooseは「実用レベルに達して」いますか</h4>
+<div id="Moose_CONTENT">
+<p>はい! 誰でも知っているような有名サイトの中にもMooseを使って高トラフィックなサービスを構築しているところがたくさんあります。ほかにもMooseを本番環境で使っている人は数え切れないほどいます。</p>
+<p>これを書いている時点で、Mooseは数百個のCPANモジュールの依存モジュールになっています。<a href="http://cpants.perl.org/dist/used_by/Moose">http://cpants.perl.org/dist/used_by/Moose</a></p>
+
+</div>
+<h4 id="Moose_API">MooseのAPIは安定していますか</h4>
+<div id="Moose_API_CONTENT">
+<p>はい。95％のユーザが利用するシュガー関数のAPIについては<strong>非常に安定</strong>していますし、変更があっても<strong>100％後方互換にします</strong>。</p>
+<p>メタAPIについてはそれほど盤石ではありません。一部については効率や一貫性を向上させるために微調整する権利を留保します。ただし、軽々しく変更することはしません。機能を廃止する際にはかならず周知期間を設けていますし、みなさんのコードを壊してばつの悪い思いをするのは「本当に」いやなことだと思っています。リファクタリングしたときにうっかりみなさんのコードを壊してしまうような変更が入らないようにするいちばん確実な方法は、テストケースを送っていただくことです。</p>
+
+</div>
+<h4 id="Moose-2">Mooseは遅いと聞きましたが本当ですか</h4>
+<div id="Moose_CONTENT-2">
+<p>これも答えづらい質問ですが、答えはイエスであり、ノーでもあります。</p>
+<p>最初にお断りしておくと、世の中にタダで手に入るものは「ありません」。また、Mooseの機能の中には、たしかにほかの機能よりコストのかかるものもあります。ただし、<strong>使った機能の分しかコストを請求しない</strong>のがMooseのポリシーでもあります。私たちはできる限りの努力を払って、コードを実行するときに使っていない機能のせいで余計な負荷がかかることはないようにしています。もちろんMooseを使うこと自体いくらかのオーバーヘッドをともなうことですが（もっとも、そのほとんどはコンパイル時のものです）、いまのところ速度が必要な方にはいくつかのオプションがあります。</p>
+<p>現在利用できるオプションとしては、クラスを不変化して高速化するという方法があります。こうするとコンパイル時のコストは多少大きくなりますが、実行時の速度（特にオブジェクトの生成時）はかなり速くなります。これは次のようなコードで実現できます。</p>
+<pre>  MyClass-&gt;meta-&gt;make_immutable();
+
+</pre>
+<p>私たちは定期的に<cite>Class::MOP</cite>が熱暴走を起こしそうなところをXSで書き直しています。また、誰でも非常に高速なオブジェクト指向を楽しめるように、現在フロリアン・ラグヴィッツ(Florian Ragwitz)とユーヴァル・コグマン(Yuval Kogman)がアクセサやインスタンスを直接Cにコンパイルする方法を模索中です。</p>
+
+</div>
+<h4 id="Moose_1_0">Moose 1.0はいつ出ますか</h4>
+<div id="Moose_1_0_CONTENT">
+<p>Mooseはもう使えます!　スティーヴン・リトル(Stevan Little)は2007年3月にリリースした0.18で「実用できるようになった」ことを宣言しました。</p>
+
+</div>
+<h3 id="-4">コンストラクタ</h3>
+<div id="CONTENT-4">
+
+</div>
+<h4 id="Moose-3">Mooseで独自のコンストラクタを書くにはどうすればよいですか</h4>
+<div id="Moose_CONTENT-3">
+<p>理想的には、決して独自の<code>new</code>メソッドは書かないようにしてください（オブジェクト生成時に特別な処理が必要な場合は、Mooseのほかの機能を使って対処してください）。ここではいくつかのシナリオと、Mooseではどのように解決するかを紹介します。</p>
+<p>インスタンス生成後に初期化コードを呼ぶ必要がある場合は<code>BUILD</code>メソッドを使ってください（この機能はPerl 6から直接持ってきたものです）。インスタンスを生成すると、すぐにインスタンスチェーンにあるすべての<code>BUILD</code>メソッドが（正しい順序で）呼ばれるので、スーパークラスもすべて適切に、また確実に初期化することができます。これはクラスのサブクラス化が非常に簡単になりますので、（可能なときは）最善のアプローチです。</p>
+<p>インスタンスが実際に生成される前にコンストラクタのパラメータをいじる必要がある場合は、いくつかのオプションがあります。</p>
+<p>パラメータ処理をまるごと変更したい場合は、<code>BUILDARGS</code>メソッドを利用できます。デフォルトの実装ではキー／値のペアか、ハッシュリファレンスを受け取るようになっていますが、オーバーライドすれば、順番通りに引数を受け取ったり、別のフォーマットの引数を受け取ったりできるようになります。</p>
+<p>個々のパラメータの扱いを変える場合は「型変換」があります（型変換の完全な例や説明については<cite>Moose::Cookbook::Basics::Recipe5</cite>をご覧ください）。型変換を利用すると引数の値を期待された通りの型に変換できます。このアプローチがもっとも柔軟で頑丈です（学習曲線はややきつくなってしまいますが）。</p>
+
+</div>
+<h4 id="Moose_Moose">Mooseを使っていないコンストラクタをMooseで利用するにはどうすればよいですか</h4>
+<div id="Moose_Moose_CONTENT">
+<p>ふつうMooseを使っていないクラスをサブクラス化するときの正しいアプローチは委譲することです（これは<code>handles</code>キーワードや型変換、<code>lazy_build</code>を使えば簡単にできます）。だから、サブクラス化するのは往々にして理想的なやり方ではありません。</p>
+<p>とはいえ、本当にMooseを使っていないクラスを継承する必要があるなら、<cite>Moose::Cookbook::Basics::Recipe11</cite>にやり方が載っています。あるいはCPANにある<cite>MooseX::NonMoose</cite>をご覧ください。</p>
+
+</div>
+<h3 id="-5">アクセサ</h3>
+<div id="CONTENT-5">
+
+</div>
+<h4 id="Moose_get_set">Mooseにgetアクセサとsetアクセサを使うよう指示するにはどうすればよいですか</h4>
+<div id="Moose_get_set_CONTENT">
+<p>もっとも簡単なのは<code>reader</code>と<code>writer</code>というアトリビュートオプションを使う方法です。</p>
+<pre>  has 'bar' =&gt; (
+      isa    =&gt; 'Baz',
+      reader =&gt; 'get_bar',
+      writer =&gt; 'set_bar',
+  );
+
+</pre>
+<p>これらのメソッドを生成しても型制約やトリガなどは利用できます。</p>
+<p>こんなにたくさんタイプしたくないし、このようなget/setアクセサをデフォルトにしたいという方は、<cite>MooseX::FollowPBP</cite>をご覧ください。このモジュールを使うとこのように書けるようになります。</p>
+<pre>  has 'bar' =&gt; (
+      isa =&gt; 'Baz',
+      is  =&gt; 'rw',
+  );
+
+</pre>
+<p>これで、Mooseは<code>bar</code>という単一のメソッドを作るかわりに、<code>get_bar</code>と<code>set_bar</code>という別々のメソッドを生成するようになります。</p>
+<p><code>bar</code>と<code>set_bar</code>にしたい場合は<cite>MooseX::SemiAffordanceAccessor</cite>をご覧ください。</p>
+<p>注意：これをグローバルに設定することは<strong>できません</strong>。そうしてしまうとMooseで作られたほかのクラスを壊してしまうからです。ただし、新たにMooseのシュガー関数をエクスポートする<cite>MyApp::Moose</cite>を定義して<cite>MooseX::FollowPBP</cite>を有効にすればタイプ数を節約できます。<cite>Moose::Cookbook::Extending::Recipe4</cite>をご覧ください。</p>
+
+</div>
+<h4 id="-6">アクセサの中で値をオブジェクトにしたり、その逆を行うにはどうすればよいですか</h4>
+<div id="CONTENT-6">
+<p>まず、最初に確認したいのは、本当に値からオブジェクトへの変換とオブジェクトから値への変換の双方が必要なのか、ということ。</p>
+<p>値からオブジェクトに変換できればよいのであれば、型変換を使うことをおすすめします。<cite>DateTime</cite>オブジェクトに変換する基本的なサンプルコードはこうなります。</p>
+<pre>  class_type 'DateTime';
+
+  coerce 'DateTime'
+      =&gt; from 'Str'
+      =&gt; via { DateTime::Format::MySQL-&gt;parse_datetime($_) };
+
+  has 'timestamp' =&gt; (is =&gt; 'rw', isa =&gt; 'DateTime', coerce =&gt; 1);
+
+</pre>
+<p>ここでは<cite>DateTime</cite>オブジェクト用に独自のサブタイプを作成して、そのサブタイプに型変換を追加しています。<code>timestamp</code>アトリビュートが期待しているのは<code>DateTime</code>型の値ですが、型変換も試すよう指示されているので、<code>timestamp</code>アクセサに<code>Str</code>型の値が渡されると、<code>via</code>ブロックにあるコードを使って<code>DateTime</code>オブジェクトへの型変換を行おうとします。</p>
+<p>より包括的な型変換の例については<cite>Moose::Cookbook::Basics::Recipe5</cite>をご覧ください。</p>
+<p>アトリビュートに渡されたオブジェクトを値に変換する必要がある場合、いまのところベストプラクティスはアクセサに<code>around</code>モディファイアを追加することです。</p>
+<pre>  # a timestamp which stores as
+  # seconds from the epoch
+  has 'timestamp' =&gt; (is =&gt; 'rw', isa =&gt; 'Int');
+
+  around 'timestamp' =&gt; sub {
+      my $next = shift;
+      my $self = shift;
+
+      return $self-&gt;$next unless @_;
+
+      # assume we get a DateTime object ...
+      my $timestamp = shift;
+      return $self-&gt;$next( $timestamp-&gt;epoch );
+  };
+
+</pre>
+<p>型変換を使ってオブジェクトを値に変換することもできるのですが、これは概して非常に複雑で、多くのサブタイプがを必要とするものになります。こちらの例はこのドキュメントで扱う範囲を越えていますので、#mooseでたずねるか、メーリングリストに投稿してください。</p>
+<p>さらにもうひとつ、独自のアトリビュートメタクラスを書くというオプションがあります。これもこのドキュメントで扱う範囲を超えていますが、#mooseやメーリングリストでなら喜んで説明します。</p>
+
+</div>
+<h4 id="-7">アトリビュートは作ったけれど、アクセサはどこにあるの</h4>
+<div id="CONTENT-7">
+<p>アクセサは何もしなくても作られるものでは<strong>ありません</strong>。Mooseにアクセサを作るよう指示する<strong>必要があるのです</strong>。おそらくこんなコードになっているのではありませんか。</p>
+<pre>  has 'foo' =&gt; (isa =&gt; 'Bar');
+
+</pre>
+<p>本当はこうしたかったのでしょう。</p>
+<pre>  has 'foo' =&gt; (isa =&gt; 'Bar', is =&gt; 'rw');
+
+</pre>
+<p>このようになっている理由は、アクセサが「なくても」使い方としてはまったく問題ないからです。もっとも単純なのは、自前のアクセサを書きたい場合です。Mooseが自動的にアクセサを作ってしまうと、クラスの生成順序の都合で、自前のアクセサが上書きされてしまうのです。それでは困りますよね。</p>
+
+</div>
+<h3 id="-8">メソッドモディファイア</h3>
+<div id="CONTENT-8">
+
+</div>
+<h4 id="code_before_code_code_code"><code>before</code>を使って<code>@_</code>の値を変更するにはどうすればよいですか</h4>
+<div id="code_before_code_code_code_CONTENT">
+<p>実はできないのです。<code>before</code>が実行されるのはメインメソッドの前だけなので、メソッド本体の実行にはおいそれと影響を与えられないのです。</p>
+<p>同様に、<code>after</code>を使ってメソッドの返り値に影響を与えることもできません。</p>
+<p><code>before</code>と<code>after</code>に制限を加えているのは、もっと簡潔なコードを書けるようにしたいからです（こうしておけば、もとのメソッドに<code>@_</code>を渡したり、返り値を（コンテクストを保つよう気をつけながら）転送することを心配する必要がなくなります）。</p>
+<p><code>around</code>メソッドモディファイアを使えばこのような制限はありませんが、少し冗長になります。</p>
+
+</div>
+<h4 id="code_before_code"><code>before</code>を使ってメソッドの実行を中断できますか</h4>
+<div id="code_before_code_CONTENT">
+<p>できますが、止められるのは例外を発生させたときだけです。それでは過激すぎるということであれば、かわりに<code>around</code>を使うことをおすすめします（メインメソッドの実行を余裕を持って中断できるのは<code>around</code>メソッドモディファイアだけです）。例はこうなります。</p>
+<pre>    around 'baz' =&gt; sub {
+        my $next = shift;
+        my ($self, %options) = @_;
+        unless ($options-&gt;{bar} eq 'foo') {
+            return 'bar';
+        }
+        $self-&gt;$next(%options);
+    };
+
+</pre>
+<p><code>$next</code>メソッドを呼ばないようにすれば、メインメソッドの実行を中断できます。</p>
+
+</div>
+<h4 id="code_after_code"><code>after</code>モディファイアの中で返り値が見られないのはなぜですか</h4>
+<div id="code_after_code_CONTENT">
+<p><code>before</code>モディファイアと同様に、<code>after</code>モディファイアも単にメインメソッドの「あとに」呼ばれるだけです。渡されるのはもともとの<code>@_</code>の中身であって、メインメソッドの返り値では<strong>ありません</strong>。</p>
+<p>これもなぜこうなっているかの議論は長すぎるので割愛しますが、<code>before</code>の場合と同じく、<code>around</code>モディファイアを使うことをおすすめします。サンプルコードはこのようになります。</p>
+<pre>  around 'foo' =&gt; sub {
+      my $next = shift;
+      my ($self, @args) = @_;
+      my @rv = $next-&gt;($self, @args);
+      # do something silly with the return values
+      return reverse @rv;
+  };
+
+</pre>
+
+</div>
+<h3 id="-9">型制約</h3>
+<div id="CONTENT-9">
+
+</div>
+<h4 id="-10">型制約に独自のエラーメッセージを用意するにはどうすればよいですか</h4>
+<div id="CONTENT-10">
+<p>サブタイプを作成するときに<code>message</code>オプションを利用してください。</p>
+<pre>  subtype 'NaturalLessThanTen'
+      =&gt; as 'Natural'
+      =&gt; where { $_ &lt; 10 }
+      =&gt; message { &quot;This number ($_) is not less than ten!&quot; };
+
+</pre>
+<p>値が<code>NaturalLessThanTen</code>の型チェックに失敗すると、この<code>message</code>ブロックが呼ばれます。</p>
+
+</div>
+<h4 id="-11">型制約のチェックを無効にすることはできますか</h4>
+<div id="CONTENT-11">
+<p>まだできませんが、将来のリリースではこのオプションが入るかもしれません。</p>
+
+</div>
+<h3 id="-12">ロール</h3>
+<div id="CONTENT-12">
+
+</div>
+<h4 id="BUILD">合成したロールでBUILDが呼ばれないのはなぜですか</h4>
+<div id="BUILD_CONTENT">
+<p>BUILDは合成したロールでは決して呼ばれません。そのおもな理由は、ロールは順番の影響を<strong>受けない</strong>からです（ロールは合成の順序が影響しないような形で合成されます。詳しい理論は<a href="http://www.iam.unibe.ch/~scg/Research/Traits/">http://www.iam.unibe.ch/~scg/Research/Traits/</a>にある大本の論文をご覧ください）。</p>
+<p>ロールには本質的に順序がないため、BUILDメソッドを実行する順序を決めることはできません。</p>
+<p>ただし、それ以外の解決策はいくつかあります。</p>
+<ul>
+		<li>アトリビュートに遅延評価とデフォルト値を組み合わせておくと、初期化を遅らせることができます（遅延評価やデフォルトの使い方についてはクックブックの<cite>Moose::Cookbook::Basics::Recipe3</cite>にあるバイナリ木の例が好例なのでご覧ください）。	</li>
+		<li>アトリビュートのトリガを使うと（これはアトリビュートの値が設定されたときに実行されます）初期化を簡単にできます。これについては<cite>Moose</cite>のドキュメントに説明されているほか、テストスイートに例があります。</li>
+</ul>
+
+<p>一般的に、ロールは初期化を<strong>必要</strong>とすべきではありません。まともなデフォルト値を用意しておくか、具体的に初期化が必要であるとドキュメント化しておくべきです。「ドキュメント化」のひとつの方法としては、アトリビュートの初期化メソッドを別に用意して、ロールの必須メソッドとすることです。例としてはこのようになります。</p>
+<pre>  package My::Role;
+  use Moose::Role;
+
+  has 'height' =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'Int',
+      lazy    =&gt; 1,
+      default =&gt; sub {
+          my $self = shift;
+          $self-&gt;init_height;
+      }
+  );
+
+  requires 'init_height';
+
+</pre>
+<p>この場合、このロールは<code>init_height</code>メソッドを用意しているクラスにしか合成できません。</p>
+<p>このような解決策でもうまくいかない場合、ロールは問題を解決するのに最適なツールではないのかもしれません（本当にクラスを使う必要があるのかもしれません）。少なくとも、問題のロールの機能を削って、初期化を必要としないようにした方がよいでしょう。</p>
+
+</div>
+<h4 id="-13">トレートとはなんですか。ロールとはどう違うのですか</h4>
+<div id="CONTENT-13">
+<p>Mooseのトレートはロールとほとんど同じものです。ただし、トレートの方は通常登録されているので（「MyApp::Role::Big」を「Big」という風に）短い名前で呼ぶことができます。</p>
+<p>Mooseの文脈では、「ロール」はふつうコンパイル時に「クラス」に合成されます。一方の「トレート」は、ふつうは実行時にクラスのインスタンスに合成して、<strong>そのインスタンスだけ</strong>に振る舞いを追加したり修正を加えたりするものです。</p>
+<p>Mooseの文脈を離れると、トレートとロールは一般的にはまったく同じ意味です。元々の論文ではトレートと呼ばれていましたが、Perl 6ではロールと呼ぶことになっています。</p>
+
+</div>
+<h3 id="Moose-4">Mooseとサブルーチンアトリビュート</h3>
+<div id="Moose_CONTENT-4">
+
+</div>
+<h4 id="-14">スーパークラスから継承したサブルーチンアトリビュートが動かないのはなぜですか</h4>
+<div id="CONTENT-14">
+<p>いまのところ<code>extends</code>キーワードを使ったモジュールのサブクラス化は実行時に行われますが、アトリビュートはコンパイル時にチェックされるため、アトリビュートを有効にするには<code>extends</code>を<code>BEGIN</code>ブロックの中に入れて、コンパイル時にアトリビュートハンドラを利用できるようにしなければなりません。</p>
+<pre>  BEGIN { extends qw/Foo/ }
+
+</pre>
+<p>念のため、ここで話題にしているのはPerlのサブルーチンアトリビュートについてです。Mooseのアトリビュートについてではありません。</p>
+<pre>  sub foo : Bar(27) { ... }
+
+</pre>
+
+</div>
+<h2 id="-15">作者</h2>
+<div id="CONTENT-15">
+<p>Stevan Little &lt;stevan@iinteractive.com&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

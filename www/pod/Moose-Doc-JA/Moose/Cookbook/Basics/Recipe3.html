@@ -1,0 +1,197 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Basics::Recipe3 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Basics::Recipe3</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">脚注</a></li>
+<li><a href="#-6">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Basics::Recipe3 - 遅延評価を行う<strong>BinaryTree</strong>の例</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package BinaryTree;
+  use Moose;
+
+  has 'node' =&gt; ( is =&gt; 'rw', isa =&gt; 'Any' );
+
+  has 'parent' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_parent',
+      weak_ref  =&gt; 1,
+  );
+
+  has 'left' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_left',
+      lazy      =&gt; 1,
+      default   =&gt; sub { BinaryTree-&gt;new( parent =&gt; $_[0] ) },
+      trigger   =&gt; \&amp;_set_parent_for_child
+  );
+
+  has 'right' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_right',
+      lazy      =&gt; 1,
+      default   =&gt; sub { BinaryTree-&gt;new( parent =&gt; $_[0] ) },
+      trigger   =&gt; \&amp;_set_parent_for_child
+  );
+
+  sub _set_parent_for_child {
+      my ( $self, $child ) = @_;
+
+      confess &quot;You cannot insert a tree which already has a parent&quot;
+          if $child-&gt;has_parent;
+
+      $child-&gt;parent($self);
+  }
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>このレシピでは、高度なアトリビュートの機能をいろいろ使って、複雑で強力な振る舞いを作る方法を説明します。とりわけここでは<code>predicate</code>や<code>lazy</code>、<code>trigger</code>といった新しいアトリビュートのオプションを多数紹介していきます。</p>
+<p>例題のクラスは、古典的なバイナリツリーです。ノードはそれぞれが<code>BinaryTree</code>のインスタンスで、任意の値を入れられる<code>node</code>というアトリビュートと、子のツリーを参照している<code>right</code>アトリビュートと<code>left</code>アトリビュート、それから<code>parent</code>というアトリビュートがあります。</p>
+<p><code>node</code>アトリビュートから見ていきましょう。</p>
+<pre>  has 'node' =&gt; ( is =&gt; 'rw', isa =&gt; 'Any' );
+
+</pre>
+<p>Mooseはこのアトリビュートに読み書き可能なアクセサを生成します。型制約は<code>Any</code>なので、文字通り何でも入れられます。</p>
+<p><code>isa</code>オプションは外してしまってもよかったのですが、ここではコンピュータのためではなく、ほかのプログラマのために入れておきました。</p>
+<p>続いて<code>parent</code>アトリビュートに移りましょう。</p>
+<pre>  has 'parent' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_parent',
+      weak_ref  =&gt; 1,
+  );
+
+</pre>
+<p>こちらも読み書き可能なアクセサがありますが、今度は<code>isa</code>オプションによってこのアトリビュートはかならず<code>BinaryTree</code>のインスタンスでなければならないと指定されています。2番目のレシピで見た通り、Mooseベースのクラスを作ると、かならず対応するクラスの型制約も用意されます。</p>
+<p><code>predicate</code>は新しいオプションで、そのアトリビュートが初期化済みかどうかをチェックできるメソッドを生成するものです（ここでは、メソッド名は<code>has_parent</code>となります）。</p>
+<p>そして、このアトリビュート最後のオプションである<code>weak_ref</code>ですが、<code>parent</code>は循環参照しているので（<code>parent</code>ツリーの<code>left</code>アトリビュートか<code>right</code>アトリビュートにはすでにこのオブジェクトへの参照があるはずです）、確実にウィークリファレンスにしてメモリリークを避けたいところです。<code>weak_ref</code>を真にすると、アクセサ関数が変化して、リファレンスを入れたらウィークリファレンスにしてくれるようになります。</p>
+<p>最後は<code>left</code>アトリビュートと<code>right</code>アトリビュートです。この2つは名前を除けば本質的には同じものですので、ここでは<code>left</code>だけ見ることにします。</p>
+<pre>  has 'left' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_left',
+      lazy      =&gt; 1,
+      default   =&gt; sub { BinaryTree-&gt;new( parent =&gt; $_[0] ) },
+      trigger   =&gt; \&amp;_set_parent_for_child
+  );
+
+</pre>
+<p><code>lazy</code>、<code>default</code>、<code>trigger</code>という新しいオプションが3つありますが、<code>lazy</code>オプションと<code>default</code>オプションはリンクしています。実は、<code>lazy</code>アトリビュートが使えるのは、<code>default</code>（あるいはあとで取り上げる<code>builder</code>）があるときだけなのです。デフォルトを用意しないでアトリビュートを遅延評価しようとすると、クラスの生成に失敗して例外が発生します。(2)</p>
+<p>2番目のレシピでは、<strong>BankAccount</strong>クラスの<code>balance</code>アトリビュートには<code>0</code>というデフォルト値が用意されていました。このようにデフォルト値がリファレンスでない場合は「値」がコピーされるのですが、デフォルト値がリファレンスの場合は、ディープクローニングではなく、単にリファレンスがコピーされます。そのため、単純にデフォルトに素のリファレンスを指定すると、最初に生成されたリファレンスがそのままそのアトリビュートを持つすべてのオブジェクトに使い回されてしまいます。</p>
+<p>この問題の回避策は、無名サブルーチンを使うことです。無名サブルーチンを使うと、デフォルトが呼ばれるたびに新しいリファレンスが生成されます。</p>
+<pre>  has 'foo' =&gt; ( is =&gt; 'rw', default =&gt; sub { [] } );
+
+</pre>
+<p>もっとも、実際には、Mooseではデフォルトにサブルーチン以外のリファレンスを使うことはできないようになっています。</p>
+<pre>  # will fail
+  has 'foo' =&gt; ( is =&gt; 'rw', default =&gt; [] );
+
+</pre>
+<p>これはエラーになりますのでしないでください。</p>
+<p>お気づきの通り、ここではデフォルトサブルーチンの中で<code>$_[0]</code>を使っています。デフォルトのサブルーチンは、実行時にはそのオブジェクトのメソッドとして呼ばれるためです。</p>
+<p>この例では、デフォルトとして、現在のツリーを親に持つ新しい<code>BinaryTree</code>オブジェクトを作っています。</p>
+<p>通常、デフォルト値はオブジェクトがインスタンス化されるとすぐに評価されます。ところが、この<code>BinaryTree</code>クラスの場合、それは大問題になりかねません！　最初のオブジェクトを作ったとき、すぐに<code>left</code>アトリビュートと<code>right</code>アトリビュートの初期化が行われると、そこでもまた新しい<code>BinaryTree</code>ができ、それがまた自身の<code>left</code>、<code>right</code>スロットを初期化しようとして、大惨事になってしまいます！</p>
+<p><code>left</code>アトリビュートと<code>right</code>アトリビュートを<code>lazy</code>にしておくとこの問題は回避できます。アトリビュートの値を読み込むとき、すでに値が存在していればデフォルトはいっさい実行されなくなります。</p>
+<p>最後にもうひとつ追加しておきたい振る舞いがあります。自動的に生成される<code>right</code>や<code>left</code>のアクセサは期待通りの働きをしてくれるとはいえません。<code>left</code>ないし<code>right</code>アトリビュートに値をセットしたら、忘れずにそのツリーの親も更新しておきたいところです。</p>
+<p>ここで自前のアクセサを用意してもよいのですが、それではMooseを使っている意味はありません。ここではそのかわりに<code>trigger</code>を使います。<code>trigger</code>にサブルーチンリファレンスをセットすると、アトリビュートに値が書き込まれたときはかならずそのサブルーチンがメソッドとして呼ばれるようになります。このメソッド呼び出しは、オブジェクトが生成されるときでも、あとからアトリビュートのアクセサメソッドに新しいオブジェクトを渡すときでも起こりますが、<code>default</code>や<code>builder</code>経由で値が書き込まれた場合には起こりません。</p>
+<pre>  sub _set_parent_for_child {
+      my ( $self, $child ) = @_;
+
+      confess &quot;You cannot insert a tree which already has a parent&quot;
+          if $child-&gt;has_parent;
+
+      $child-&gt;parent($self);
+  }
+
+</pre>
+<p>このトリガでは2つのことをしています。まず、新しい子ノードがすでに親を持っていないかを確認しています（これは例を簡単にするためです。もっと賢くしたいのであれば、古い親ツリーからその子を削除して新しいツリーに追加するところでしょう）。</p>
+<p>子ノードに親がない場合は現在のツリーに追加して、<code>parent</code>アトリビュートには確実に正しい値が設定されるようにします。</p>
+<p>ほかのレシピの場合と同じく、<strong>BinaryTree</strong>もほかのPerl 5のクラスと同じように使えます。<cite>t/000_recipes/moose_cookbook_basics_recipe3.t</cite>にはもっと詳しい使用例があります。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>このレシピではMooseの高度な機能をいくつか紹介しました。このレシピがほかのところでもみなさんのコードをシンプルにするお役に立てば幸いです。</p>
+
+</div>
+<h2 id="-5">脚注</h2>
+<div id="CONTENT-5">
+<dl>
+	<dt>(1)</dt>
+	<dd>
+		<p>ウィークリファレンスはトリッキーなものですから、控えめに、（循環参照がある場合のように）適切な理由があるときのみ使うようにしてください。気をつけないと、アトリビュートの値が「不思議な」消え方をすることがあります（これは、Perlの参照カウント式ガベージコレクタが走ってウィークリファレンスにしておいた値を削除してしまうためです）。</p>
+		<p>要するに、なにをやっているかわからないのであれば使わないように、ということです。:)</p>
+	</dd>
+	<dt>(2)</dt>
+	<dd>
+		<p>2番目のレシピで紹介したように、お望みであれば<code>lazy</code>オプションなしで<code>default</code>オプションを使うことは「できます」。</p>
+		<p>また、<code>default</code>のかわりに<code>builder</code>を使うこともできます。詳しくは<cite>Moose::Cookbook::Basics::Recipe9</cite>をご覧ください。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-6">作者</h2>
+<div id="CONTENT-6">
+<p>Stevan Little &lt;stevan@iinteractive.com&gt;</p>
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

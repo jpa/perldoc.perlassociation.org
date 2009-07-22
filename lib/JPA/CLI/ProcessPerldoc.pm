@@ -40,8 +40,9 @@ has pod_parser => (
     default => sub {
         return Pod::Xhtml->new(
             StringMode => 1,
-            TopLinks   => 0,
-        )
+	    FragmentOnly=>1,
+	    TopHeading => 2,
+            TopLinks   => 0        )
     },
 );
 
@@ -200,9 +201,10 @@ sub process_pod {
 
         $parser->parse_from_file( $source->openr() );
 
-        my $xhtml = $parser->asString();
-        $xhtml =~ s/^.+<body>/[% WRAPPER wrapper.tt, page.title => module _ " " _ dist _ "(" _ version _ ")" %]<h1>[% module | html %]<\/h1>/sm;
-        $xhtml =~ s/<\/body>.+$/[% END %]/sm;
+        my $xhtml = '[% WRAPPER wrapper.tt, page.title => module _ " " _ dist _ "(" _ version _ ")" %]<h1>[% module | html %]</h1>'."\n";
+
+        $xhtml .= $parser->asString();
+	$xhtml .= '[% END %]';
 
         $template->process( \$xhtml, { version => $version, module => $modname, dist => $dist }, $output->stringify ) ||
             confess $template->error;

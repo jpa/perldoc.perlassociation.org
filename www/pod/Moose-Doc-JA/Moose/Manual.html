@@ -1,0 +1,243 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#Moose">Mooseとはなにか?</a></li>
+<li><a href="#Moose-2">なぜMooseを使うのか?</a></li>
+<li><a href="#-2">例</a>
+<ul>
+<li>
+<ul><li><a href="#-3">目次</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#Moose-3">Mooseを使うべき理由</a></li>
+<li><a href="#-4">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual - Mooseとはなにか、どうやって使うのか</p>
+
+</div>
+<h2 id="Moose">Mooseとはなにか?</h2>
+<div id="Moose_CONTENT">
+<p>Mooseは、Perl 5のために書かれた「完全な」オブジェクトシステムです。現代的なオブジェクト指向言語をなにかひとつ思い浮かべてみてください(Perl 5は決して現代的なオブジェクト指向言語ではありません)。アトリビュートを宣言したり、オブジェクトを構築したり、継承を行ったり、あるいはもっといろいろできるかもしれませんが、そのような作業のためのキーワードが用意されていますし、その実装がどうなっているかなんてだれも気にとめません。</p>
+<p>Mooseが目指すところも同じです。本当に新しいキーワードを作ることはできませんが、Mooseはそれとよく似た「シュガー」を提供していますし、なにより、Mooseを使うと「クラスを宣言的に定義できる」ようになります。ブレスされたハッシュリファレンスやアクセサメソッドなどはもう気にしなくてもよくなるのです。</p>
+<p>また、Mooseを使えばクラスの「論理的な」構造だけを気にすればよくなります。「どうやって」ではなく「なに（が、を）」の部分に集中できるようになるのです。Mooseを使ったクラス定義は、非常に簡潔な英文が並んでいるように見えます。</p>
+<p>Mooseのベースとなっているのは<code>Class::MOP</code>というメタオブジェクトプロトコル(MOP)です。MOPのおかげで、MooseはMooseを利用しているすべてのクラスに完全なイントロスペクションを提供できます。つまり、それぞれのクラスに問い合わせれば、アトリビュートや親クラス、子クラス、メソッドなどの情報が得られるわけです（これらの情報はすべて明確に定義されたAPIから取得できます）。MOPによる抽象化のおかげで、シンボルテーブルをいじったり<code>@ISA</code>変数の中身を見たりといった、私たちがよく知り、愛用している(?)泥臭いトリックをいっさい使わなくてもすむようになるのです。</p>
+<p>Mooseの元になったのはもっぱらPerl 6のオブジェクトシステムですが、CLOSやSmalltalkのように、ほかにもさまざまな言語の精髄を取り込んでいます。</p>
+
+</div>
+<h2 id="Moose-2">なぜMooseを使うのか?</h2>
+<div id="Moose_CONTENT-2">
+<p>Mooseは、Perl 5のオブジェクト指向プログラミングをより手軽で強力なものにしてくれます。強力なツールを宣言的で使いやすい高レベルAPIで隠蔽していますので、なにより魔法使いでなくても使えるのがよいところです。</p>
+<p>ただし、その気になれば、強力なイントロスペクションAPIを利用・拡張してオブジェクトの内部に手を入れることもできます。</p>
+
+</div>
+<h2 id="-2">例</h2>
+<div id="CONTENT-2">
+<pre>  package Person;
+
+  use Moose;
+
+  has 'first_name' =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Str',
+  );
+
+  has 'last_name' =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Str',
+  );
+
+  no Moose;
+  __PACKAGE__-&gt;meta-&gt;make_immutable;
+
+</pre>
+<p>これは「実際に利用可能な、完全な」クラス定義の例です。</p>
+<pre>  package User;
+
+  use DateTime;
+  use Moose;
+
+  extends 'Person';
+
+  has 'password' =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Str',
+  );
+
+  has 'last_login' =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'DateTime',
+      handles =&gt; { 'date_of_last_login' =&gt; 'date' },
+  );
+
+  sub login {
+      my $self = shift;
+      my $pw   = shift;
+
+      return 0 if $pw ne $self-&gt;password;
+
+      $self-&gt;last_login( DateTime-&gt;now() );
+
+      return 1;
+  }
+
+  no Moose;
+  __PACKAGE__-&gt;meta-&gt;make_immutable;
+
+</pre>
+<p>このコードを逐一説明する役目はほかのドキュメントにゆずりますが、よくあるオブジェクト指向のイディオムがシンプルな宣言文になっている様子はわかるはずです。</p>
+
+</div>
+<h3 id="-3">目次</h3>
+<div id="CONTENT-3">
+<p>このマニュアルにはいくつかのドキュメントが含まれています。</p>
+<dl>
+	<dt><cite>Moose::Manual::Concepts</cite></dt>
+	<dd>
+		<p>ここではMooseのコンセプトを紹介します。また、「従来の」Perl 5オブジェクト指向プログラミングとの対比も行います。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Unsweetened</cite></dt>
+	<dd>
+		<p>クラスのサンプルを2つ紹介します。いずれもまずはMooseで、次に「従来のPerl 5」で書いたものです。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Classes</cite></dt>
+	<dd>
+		<p>Mooseはクラスの中でどう使えばよいのでしょうか。また、Mooseのクラスでサブクラスを利用するにはどうすればよいのでしょうか。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Attributes</cite></dt>
+	<dd>
+		<p>アトリビュートはMooseによるオブジェクト指向システムの根幹をなす部分です（アトリビュートというのはオブジェクトが保持するデータのことです）。Mooseにはアトリビュート関連の機能もたくさんあります！</p>
+	</dd>
+	<dt><cite>Moose::Manual::Delegation</cite></dt>
+	<dd>
+		<p>アトリビュート自体がオブジェクトの場合、委譲を利用すると便利です。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Construction</cite></dt>
+	<dd>
+		<p>Mooseではどのようにオブジェクトが構築されるか、とりわけ<code>BUILD</code>と<code>BUILDARGS</code>メソッドについて学びましょう。また、<code>DEMOLISH</code>によるオブジェクトの破壊も扱います。</p>
+	</dd>
+	<dt><cite>Moose::Manual::MethodModifiers</cite></dt>
+	<dd>
+		<p>メソッドモディファイアを使うと「あるメソッドを呼ぶ前に別のメソッドを実行する」とか「あるメソッドを別のコードでラップする」といった書き方ができるようになります。メソッドモディファイアは特にロールの中やアトリビュートアクセサに対して利用すると便利です。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Roles</cite></dt>
+	<dd>
+		<p>ロールは（「デバッグ可能」とか「出力可能」といった）クラスの動作をあらわすものです。ロールを使うと継承とはまったく別のやり方でクラスに振る舞いを追加することができます。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Types</cite></dt>
+	<dd>
+		<p>Mooseの型システムを使うと、アトリビュートに持たせられる値を厳密に定義できます。</p>
+	</dd>
+	<dt><cite>Moose::Manual::MOP</cite></dt>
+	<dd>
+		<p>MooseのメタAPIシステムを使うと、クラスに親クラスや子クラス、メソッド、アトリビュートなどを問い合わせることができます。</p>
+	</dd>
+	<dt><cite>Moose::Manual::MooseX</cite></dt>
+	<dd>
+		<p>このドキュメントではCPANにあがっている中でも特に有用なMooseの拡張モジュールをいくつか紹介します。</p>
+	</dd>
+	<dt><cite>Moose::Manual::BestPractices</cite></dt>
+	<dd>
+		<p>Mooseにはさまざまな機能がありますし、使い方も決して一通りではありません。でも、使う機能は一部にしぼって、いつもそれを使うようにした方が、みなさんのためになると思います。</p>
+	</dd>
+	<dt><cite>Moose::Manual::FAQ</cite></dt>
+	<dd>
+		<p>Mooseについてのよくある質問です。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Contributing</cite></dt>
+	<dd>
+		<p>Mooseのハックに興味がある方はご覧ください。</p>
+	</dd>
+	<dt><cite>Moose::Manual::Delta</cite></dt>
+	<dd>
+		<p>このドキュメントでは、後方非互換なものをはじめとするMooseの大きな変更点を説明しています。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="Moose-3">Mooseを使うべき理由</h2>
+<div id="Moose_CONTENT-3">
+<p>ここは、ここまで読んでもまだ「どうして使う必要があるんだろうか」とお悩みの方のためのセクションです。</p>
+<dl>
+	<dt>これ以上オブジェクトシステムを増やしてどうするの!?!?</dt>
+	<dd>
+		<p>たしかにPerl 5にはオブジェクトを構築する方法がたくさんありますし、その多くがインサイドアウト式のオブジェクトなどをベースにしているのもわかっていますが、Mooseは違います。新しいオブジェクトシステムではなく、既存のオブジェクトシステムを拡張するものだからです。</p>
+		<p>Mooseは、<cite>Class::MOP</cite>というPerl 5のメタクラスシステムの上に作られています。つまり、Mooseは通常のPerl 5オブジェクトの作り方を改善するだけでなく、メタクラスプログラミングの能力を提供するものでもあります。</p>
+	</dd>
+	<dt>本当に使えるの?　それともただの実験?</dt>
+	<dd>
+		<p>Mooseの「ベース」となっているのは、スティーヴンがPerl 6のメタモデルのために実装したプロトタイプなどの実験作ですが、Mooseは実験作やプロトタイプでは<strong>ありません</strong>。<strong>現実の</strong>ものです。</p>
+	</dd>
+	<dt>本番環境でも使えるの?</dt>
+	<dd>
+		<p>はい。</p>
+		<p>Mooseはこれまで多くの企業や個人が本番環境での運用に成功してきました。もう何年もほとんど（あるいはまったく）問題なく動作しているアプリケーションもいくつもあります。Mooseは非常に安定していると思っていますし、安定し続けるように努力もしています。</p>
+		<p>もちろん最終的には自分で決断していただく必要はありますが、疑問や不安があるなら、お気軽に作者のスティーヴンやmoose@perl.orgのメーリングリストにメールをください。あるいはirc.perl.org#mooseに立ち寄って質問してくださっても結構です。</p>
+	</dd>
+	<dt>Mooseは要するにPerl 6をPerl 5で実装したもの?</dt>
+	<dd>
+		<p>いいえ。Perl 6からは大きな影響を受けていますが、Perl 6そのものではありません。MooseはあくまでもPerl 5用のオブジェクト指向システムです。スティーヴンがMooseを書いたのは、昔ながらの退屈なPerl 5のオブジェクト指向コードを書くのにうんざりしたからであり、Perl 6のオブジェクト指向システムがほしくなったから。だからこそ、Rubyに転向するかわりに、Mooseを書いたのです :)</p>
+	</dd>
+	<dt>あれ、「ポスト」モダン?　ただの「モダン」だと思っていたけど。</dt>
+	<dd>
+		<p>1999年に開催された『Linux World』でラリー・ウォールは「Perl, the first postmodern computer language」というトークをしました。その中でラリーは、Perlには自分がいいと思った機能を取り入れ、だめだと思った機能は捨てたという話をしたのですが、スティーヴンはその記事を読んで、自分たちがMooseでしてきたこともまったく同じだと思ったのです。Mooseも、Perl 6やCLOS (LISP)、Smalltalk、Java、BETA、OCaml、Rubyといった多くの言語から機能を「借り」てきましたが、気に入らなかった（だめだと思った）部分については投げ捨ててきました。このような理由から（ほかにも理由はありますが）スティーヴンはMooseを「ポストモダン」なオブジェクトシステムと言い直すことにしたのです。</p>
+		<p>説明はもう十分でしょう。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-4">作者</h2>
+<div id="CONTENT-4">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+<p>Stevan Little &lt;stevan@iinteractive.com&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2008-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

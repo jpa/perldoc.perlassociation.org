@@ -1,0 +1,158 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Meta::Recipe6 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Meta::Recipe6</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Meta::Recipe6 - メソッドメタクラスを使ってメソッドをパブリックにしたりプライベートにしたりする</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package My::Meta::Method;
+
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  extends 'Moose::Meta::Method';
+
+  has '_policy' =&gt; (
+      is       =&gt; 'ro',
+      isa      =&gt; enum( [ qw( public private ) ] ),
+      default  =&gt; 'public',
+      init_arg =&gt; 'policy',
+  );
+
+  sub new {
+      my $class   = shift;
+      my %options = @_;
+
+      my $self = $class-&gt;SUPER::wrap(%options);
+
+      $self-&gt;{_policy} = $options{policy};
+
+      $self-&gt;_add_policy_wrapper;
+
+      return $self;
+  }
+
+  sub _add_policy_wrapper {
+      my $self = shift;
+
+      return if $self-&gt;is_public;
+
+      my $name      = $self-&gt;name;
+      my $package   = $self-&gt;package_name;
+      my $real_body = $self-&gt;body;
+
+      my $body = sub {
+          die &quot;The $package\::$name method is private&quot;
+              unless ( scalar caller() ) eq $package;
+
+          goto &amp;{$real_body};
+      };
+
+      $self-&gt;{body} = $body;
+  }
+
+  sub is_public  { $_[0]-&gt;_policy eq 'public' }
+  sub is_private { $_[0]-&gt;_policy eq 'private' }
+
+  package MyApp::User;
+
+  use Moose;
+
+  has 'password' =&gt; ( is =&gt; 'rw' );
+
+  __PACKAGE__-&gt;meta()-&gt;add_method(
+      '_reset_password',
+      My::Meta::Method-&gt;new(
+          name         =&gt; '_reset_password',
+          package_name =&gt; __PACKAGE__,
+          body         =&gt; sub { $_[0]-&gt;password('reset') },
+          policy       =&gt; 'private',
+      )
+  );
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>この例ではパブリックメソッドとプライベートメソッドを区別する独自のメソッドメタクラスを紹介します。メソッドがプライベートとして定義された場合は、メソッドにラッパを追加して、定義されたクラス以外から呼ばれた場合はdieするようにします。</p>
+<p>ここでクラスにメソッドを追加しているやり方はいささか汚いので、本当に実装するのであればおそらくプライベートメソッドとして宣言できるようなシュガー関数のたぐいを追加した方がよさそうですが、それはこのレシピの範囲を超えますので、詳しくは拡張についてのレシピをご覧ください。</p>
+<p>このカスタムクラスのコアとなるのは<code>policy</code>アトリビュートと<code>_add_policy_wrapper</code>メソッドです。</p>
+<p>お気づきの通り、<code>policy</code>アトリビュートはコンストラクタの中で明示的に値をセットする必要があります。</p>
+<pre>      $self-&gt;{policy} = $options{policy};
+
+</pre>
+<p>こうする必要があるのは、Mooseのメタクラスはオブジェクトを生成するときにメタのAPIを使わないためです（Mooseのクラスはたいてい高速化のために「インライン展開」された独自のコンストラクタを使います）。</p>
+<p>この例の場合、親クラスのコンストラクタは<code>wrap</code>メソッドなので、オブジェクトを作る際にはそれを呼んでいますが、そちらにはサブクラス特有のアトリビュートは含まれていません。</p>
+<p>本当に仕事をしているのは<code>_add_policy_wrapper</code>メソッドです。メソッドがプライベートの場合は本当のサブルーチンのまわりにラッパを用意して、呼び出し元とこのサブルーチンが定義されているパッケージが一致するかチェックします。</p>
+<p>両者が一致しない場合はdieで死にます。一致する場合は本物のメソッドが呼ばれます。<code>goto</code>を使っているのはラッパがコールスタックの中に現れないようにするためです。</p>
+<p>最後に<code>$self-&gt;{body}</code>の値を置き換えます。これも、Moose自身がMooseを使っていないために私たちがあまり洗練されていない処理をしなければならないところです。</p>
+<p>このメソッドのオブジェクトをメタクラスの<code>add_method</code>メソッドに渡すと、メソッドの本体を受け取ってクラスから利用できるようにしてくれます。</p>
+<p>最後になりますが、これらのメソッドをイントロスペクションAPI経由で取り出す場合は、<code>is_public</code>メソッドと<code>is_private</code>メソッドを呼ぶと、そのメソッドについての追加情報を得ることができます。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>独自のメソッドメタクラスを使うとメソッドに振る舞いやメタ情報を追加できますが、残念ながらPerlインタプリタにはメソッドの定義に簡単に割り込めるフックがありませんので、これらのメソッドを追加するAPIはあまりきれいなものではありません。</p>
+<p>これは、独自のMooseシュガー関数を用意したり、<cite>Devel::Declare</cite>のようなツールを使ってPerlに本格的な新しいキーワードを用意してやると改善できます。</p>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

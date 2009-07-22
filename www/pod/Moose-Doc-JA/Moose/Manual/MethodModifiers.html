@@ -1,0 +1,277 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual::MethodModifiers Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual::MethodModifiers</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">メソッドモディファイアとは</a></li>
+<li><a href="#-3">なぜモディファイアを使うのか</a></li>
+<li><a href="#before_after_around">before、after、around</a></li>
+<li><a href="#inner_augment">innerとaugment</a></li>
+<li><a href="#override_super">overrideとsuper</a></li>
+<li><a href="#-4">セミコロン</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual::MethodModifiers - Mooseのメソッドモディファイア</p>
+
+</div>
+<h2 id="-2">メソッドモディファイアとは</h2>
+<div id="CONTENT-2">
+<p>Mooseには「メソッドモディファイア」と呼ばれる機能があります（「フック」や「アドバイス」だと思っていただいても結構です）。</p>
+<p>この機能を理解するには、おそらくいくつか例を見てみるのがいちばんでしょう。</p>
+<pre>  package Example;
+
+  use Moose;
+
+  sub foo {
+      print &quot;foo\n&quot;;
+  }
+
+  before 'foo' =&gt; sub { print &quot;about to call foo\n&quot;; };
+  after 'foo'  =&gt; sub { print &quot;just called foo\n&quot;; };
+
+  around 'foo' =&gt; sub {
+      my $orig = shift;
+      my $self = shift;
+
+      print &quot;I'm around foo\n&quot;;
+
+      $self-&gt;$orig(@_);
+
+      print &quot;I'm still around foo\n&quot;;
+  };
+
+</pre>
+<p>これで<code>Example-&gt;new-&gt;foo</code>を呼ぶと、次のような出力が得られます。</p>
+<pre>  about to call foo
+  I'm around foo
+  foo
+  I'm still around foo
+  just called foo
+
+</pre>
+<p>名前が「before」、「after」、「around」ですから、おそらくこの結果は予想されていた通りだったことと思います。</p>
+<p>また、ご覧の通り、beforeモディファイアはaroundモディファイアの前に来ていますし、afterモディファイアは最後に来ています。</p>
+<p>同じ種類のモディファイアが複数ある場合、beforeモディファイアとaroundモディファイアは最後に追加されたものから、afterモディファイアは最初に追加されたものから順に実行されます。</p>
+<pre>   before 2
+    before 1
+     around 2
+      around 1
+       primary
+      around 1
+     around 2
+    after 1
+   after 2
+
+</pre>
+
+</div>
+<h2 id="-3">なぜモディファイアを使うのか</h2>
+<div id="CONTENT-3">
+<p>メソッドモディファイアには多くの使い方があります。非常によくあるのは、ロールのなかで使う例です。メソッドモディファイアを使うと、そのロールを使ったクラスのメソッドの振る舞いを変えることができるようになります。ロールについては<cite>Moose::Manual::Roles</cite>をご覧ください。</p>
+<p>モディファイアがもっとも役に立つのはロールの中です。だから、以下の例の中にはややわざとらしいものもあります（これらはモディファイアの動作を紹介するためのものなので、もっとも自然な使い方とはいえないこともあります）。</p>
+
+</div>
+<h2 id="before_after_around">before、after、around</h2>
+<div id="before_after_around_CONTENT">
+<p>メソッドモディファイアを使うと、アトリビュートアクセサのようにMooseが生成してくれたメソッドに振る舞いを追加することができます。</p>
+<pre>  has 'size' =&gt; ( is =&gt; 'rw' );
+
+  before 'size' =&gt; sub {
+      my $self = shift;
+
+      if (@_) {
+          Carp::cluck('Someone is setting size');
+      }
+  };
+
+</pre>
+<p>beforeモディファイアにはもうひとつ、メソッドを呼ぶ前に何らかの事前チェックを行うという使い方があります。たとえば、</p>
+<pre>  before 'size' =&gt; sub {
+      my $self = shift;
+
+      die 'Cannot set size while the person is growing'
+          if @_ &amp;&amp; $self-&gt;is_growing;
+  };
+
+</pre>
+<p>こうすると、型制約では対応できない論理的なチェックを実装できます。これは特にオブジェクトの状態変化に関する論理的な規則を定義するときに役に立ちます。</p>
+<p>同じように、afterモディファイアは実行したアクションのログ取りに利用できます。</p>
+<p>なお、beforeモディファイアとafterモディファイアの返り値はいずれも無視されます。</p>
+<p>aroundモディファイアはbeforeモディファイアやafterモディファイアより少し強力です。aroundモディファイアはもとのメソッドに渡された引数を変更できますし、もとのメソッドをまったく呼ばないという決定を下すこともできます。また、aroundモディファイアを使うと返り値を修正することもできます。</p>
+<p>aroundモディファイアは、最初の引数にもとのメソッド、「その次に」オブジェクト、最後にメソッドに渡されたすべての引数を受け取ります。</p>
+<pre>  around 'size' =&gt; sub {
+      my $orig = shift;
+      my $self = shift;
+
+      return $self-&gt;$orig()
+          unless @_;
+
+      my $size = shift;
+      $size = $size / 2
+          if $self-&gt;likes_small_things();
+
+      return $self-&gt;$orig($size);
+  };
+
+</pre>
+
+</div>
+<h2 id="inner_augment">innerとaugment</h2>
+<div id="inner_augment_CONTENT">
+<p>augmentとinnerは同じ機能を2つにわけたものです。augmentモディファイアはサブクラス化をひっくり返したようなものを提供します（実装の一部はスーパークラスで行い、残りはサブクラスが実装してくれることを期待する、と書くのがaugmentモディファイアです）。</p>
+<p>スーパークラスで<code>inner()</code>を呼ぶと、サブクラスの<code>augment</code>モディファイアが呼ばれます。</p>
+<pre>  package Document;
+
+  use Moose;
+
+  sub as_xml {
+      my $self = shift;
+
+      my $xml = &quot;&lt;document&gt;\n&quot;;
+      $xml .= inner();
+      $xml .= &quot;&lt;/document&gt;\n&quot;;
+
+      return $xml;
+  }
+
+</pre>
+<p>このメソッドの中で<code>inner()</code>を使っておくと、サブクラス（ひとつとは限りません）があとからこのメソッドに独自の具体的な実装を追加できるようになります。</p>
+<pre>  package Report;
+
+  use Moose;
+
+  extends 'Document';
+
+  augment 'as_xml' =&gt; sub {
+      my $self = shift;
+
+      my $xml = &quot;&lt;report&gt;\n&quot;;
+      $xml .= inner();
+      $xml .= &quot;&lt;/report&gt;\n&quot;;
+
+      return $xml;
+  };
+
+</pre>
+<p>Reportオブジェクトで<code>as_xml</code>を呼ぶと、このような結果が得られます。</p>
+<pre>  &lt;document&gt;
+  &lt;report&gt;
+  &lt;/report&gt;
+  &lt;/document&gt;
+
+</pre>
+<p>ただし、<code>Report</code>でも<code>inner()</code>を呼んでいますので、サブクラス化を続ければさらにこのドキュメントの内部にコンテンツを追加していくことができます。</p>
+<pre>  package Report::IncomeAndExpenses;
+
+  use Moose;
+
+  extends 'Report';
+
+  augment 'as_xml' =&gt; sub {
+      my $self = shift;
+
+      my $xml = '&lt;income&gt;' . $self-&gt;income . '&lt;/income&gt;';
+      $xml .= &quot;\n&quot;;
+      $xml .= '&lt;expenses&gt;' . $self-&gt;expenses . '&lt;/expenses&gt;';
+      $xml .= &quot;\n&quot;;
+
+      $xml .= inner() || q{};
+
+      return $xml;
+  };
+
+</pre>
+<p>これでレポートの中身はこうなります。</p>
+<pre>  &lt;document&gt;
+  &lt;report&gt;
+  &lt;income&gt;$10&lt;/income&gt;
+  &lt;expenses&gt;$8&lt;/expenses&gt;
+  &lt;/report&gt;
+  &lt;/document&gt;
+
+</pre>
+<p>この<code>augment</code>と<code>inner()</code>の組み合わせが特殊なのは（もっとも抽象的な）親から（もっとも具体的な）子の順に呼ばれるメソッドを持てるところです（これは通常の継承パターンとは正反対です）。</p>
+<p><code>Report::IncomeAndExpenses</code>でも<code>inner()</code>を呼んでいることにも注意してください。オブジェクトが<code>Report::IncomeAndExpenses</code>のインスタンスである場合は、この呼び出しはなにもしません。ただ偽を返します。</p>
+
+</div>
+<h2 id="override_super">overrideとsuper</h2>
+<div id="override_super_CONTENT">
+<p>最後になりますが、MooseにはPerlに組み込まれているメソッドオーバーライドの仕組みについても簡単なシュガー関数を用意しています。親クラスのメソッドをオーバーライドしたい場合は、<code>override</code>でできます。</p>
+<pre>  package Employee;
+
+  use Moose;
+
+  extends 'Person';
+
+  has 'job_title' =&gt; ( is =&gt; 'rw' );
+
+  override 'display_name' =&gt; sub {
+      my $self = shift;
+
+      return super() . q{, } . $self-&gt;title();
+  };
+
+</pre>
+<p><code>super()</code>の呼び出しは<code>$self-&gt;SUPER::display_name</code>を呼ぶのとほとんど同じです。異なるのは、スーパークラスのメソッドに渡される引数はかならずメソッドモディファイアに渡されるものと同じで、変更できないことです。</p>
+<p><code>super()</code>に引数を渡してもすべて無視されます。また、<code>super()</code>を呼ぶ前に<code>@_</code>の値を変更しても同じです。</p>
+
+</div>
+<h2 id="-4">セミコロン</h2>
+<div id="CONTENT-4">
+<p>これらのメソッドモディファイアはいずれもPerlの関数として実装されているので、モディファイアの宣言はかならずセミコロンで終えなければなりません。</p>
+<pre>  after 'foo' =&gt; sub { };
+
+</pre>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2008-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

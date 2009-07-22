@@ -1,0 +1,160 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Basics::Recipe8 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Basics::Recipe8</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a>
+<ul>
+<li>
+<ul><li><a href="#lazy_build">lazy_buildによるショートカット</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Basics::Recipe9 - ビルダーメソッドとlazy_build</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package BinaryTree;
+  use Moose;
+
+  has 'node' =&gt; (is =&gt; 'rw', isa =&gt; 'Any');
+
+  has 'parent' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_parent',
+      weak_ref  =&gt; 1,
+  );
+
+  has 'left' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_left',
+      lazy      =&gt; 1,
+      builder   =&gt; '_build_child_tree',
+  );
+
+  has 'right' =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'BinaryTree',
+      predicate =&gt; 'has_right',
+      lazy      =&gt; 1,
+      builder   =&gt; '_build_child_tree',
+  );
+
+  before 'right', 'left' =&gt; sub {
+      my ($self, $tree) = @_;
+      $tree-&gt;parent($self) if defined $tree;
+  };
+
+  sub _build_child_tree {
+      my $self = shift;
+
+      return BinaryTree-&gt;new( parent =&gt; $self );
+  }
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>この例は、<cite>Moose::Cookbook::Basics::Recipe3</cite>を読んだ方ならほとんど同じもののように見えることでしょう。実際、ここでしたのはアトリビュートの<code>default</code>パラメータを<code>builder</code>で置き換えたことだけです。</p>
+<p>この例に限っていえば、<code>default</code>と<code>builder</code>オプションはまったく同じ働きをしています。<code>left</code>ないし<code>right</code>アトリビュートを読み込もうとすると、ビルダーメソッドが呼ばれてアトリビュートが初期化されるわけです。</p>
+<p>注意したいのは、Mooseは、「そのアトリビュートが定義されているオブジェクトの」ビルダーメソッドを呼ぶ、ということ。例をあげましょう。</p>
+<pre>  my $tree = BinaryTree-&gt;new();
+
+  my $left = $tree-&gt;left();
+
+</pre>
+<p><code>$tree-&gt;left()</code>が呼ばれると、Mooseは<code>$tree-&gt;_build_child_tree()</code>を呼んで<code>left</code>アトリビュートの初期化を行います。あらかじめもとのコンストラクタに<code>left</code>が渡されていた場合は、ビルダーは呼ばれません。</p>
+<p><code>default</code>と<code>builder</code>にはいくつか違いがあります。特筆に値するものとしては、ビルダーはサブクラス化が可能であることと、ロールから合成できることがあげられます。詳しくは<cite>Moose::Manual::Attributes</cite>をご覧ください。</p>
+
+</div>
+<h3 id="lazy_build">lazy_buildによるショートカット</h3>
+<div id="lazy_build_CONTENT">
+<p>アトリビュートのオプションを一度にまとめて指定するシンタックスシュガーとして、<code>lazy_build</code>というアトリビュートオプションを使うこともできます。</p>
+<pre>  has 'animal' =&gt; (
+      is         =&gt; 'ro',
+      isa        =&gt; 'Animal',
+      lazy_build =&gt; 1,
+  );
+
+</pre>
+<p>これは、次の書き方を簡略化したものです。</p>
+<pre>  has 'animal' =&gt; (
+      is        =&gt; 'ro',
+      isa       =&gt; 'Animal',
+      required  =&gt; 1,
+      lazy      =&gt; 1,
+      builder   =&gt; '_build_animal',
+      predicate =&gt; 'has_animal',
+      clearer   =&gt; 'clear_animal',
+  );
+
+</pre>
+<p>アトリビュートがアンダースコア（下線）で始まる場合、<code>predicate</code>と<code>clearer</code>についてはMooseが気を利かせて、期待通りにメソッド名がアンダースコアで始まるようにしてくれます。<code>builder</code>メソッドについては「常に」アンダースコアで始まります。</p>
+<p><code>lazy_build</code>の詳細については<cite>Moose::Manual::Attributes</cite>をご覧ください。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p><code>builder</code>オプションは、<code>default</code>の機能をよりオブジェクト指向らしくしたものです。また、デフォルト値を生成するコードを明確に定義されたメソッドに分離してくれます。アトリビュートの定義に無名サブルーチンを混ぜると、非常に見苦しい、理解しづらいものになることがあります。</p>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

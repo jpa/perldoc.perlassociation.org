@@ -1,0 +1,296 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Basics::Recipe9 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Basics::Recipe9</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">はじめに</a>
+<ul>
+<li>
+<ul><li><a href="#-5">演算子のオーバーロードとは?</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-6">遺伝子</a>
+<ul>
+<li>
+<ul><li><a href="#Human_Gene_bey2">Human::Gene::bey2</a></li>
+<li><a href="#Human_Gene_gey">Human::Gene::gey</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-7">目の色</a></li>
+<li><a href="#code_Human_code"><code>Human</code>に目の色を追加する</a></li>
+<li><a href="#-8">まとめ</a></li>
+<li><a href="#-9">次のステップ</a></li>
+<li><a href="#-10">作者</a></li>
+<li><a href="#LICENSE">LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Basics::Recipe9 - 演算子のオーバーロード、サブタイプ、型変換</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package Human;
+
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  subtype 'Gender'
+      =&gt; as 'Str'
+      =&gt; where { $_ =~ m{^[mf]$}s };
+
+  has 'gender' =&gt; ( is =&gt; 'ro', isa =&gt; 'Gender', required =&gt; 1 );
+
+  has 'mother' =&gt; ( is =&gt; 'ro', isa =&gt; 'Human' );
+  has 'father' =&gt; ( is =&gt; 'ro', isa =&gt; 'Human' );
+
+  use overload '+' =&gt; \&amp;_overload_add, fallback =&gt; 1;
+
+  sub _overload_add {
+      my ( $one, $two ) = @_;
+
+      die('Only male and female humans may create children')
+          if ( $one-&gt;gender() eq $two-&gt;gender() );
+
+      my ( $mother, $father )
+          = ( $one-&gt;gender eq 'f' ? ( $one, $two ) : ( $two, $one ) );
+
+      my $gender = 'f';
+      $gender = 'm' if ( rand() &gt;= 0.5 );
+
+      return Human-&gt;new(
+          gender =&gt; $gender,
+          mother =&gt; $mother,
+          father =&gt; $father,
+      );
+  }
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>このレシピでは演算子のオーバーロードや型変換、サブタイプを利用してヒトの繁殖システムを（まあ、少なくとも遺伝子の選択くらいは、ですが）再現する方法を紹介します。</p>
+
+</div>
+<h2 id="-4">はじめに</h2>
+<div id="CONTENT-4">
+<p>この<code>Human</code>クラスでは演算子のオーバーロードを利用して2人のヒトを「加え」れば子供が産まれるようになっています（今回の実装では2つのオブジェクトは異なる性を持っている必要がありますが、ここで話題にしているのはあくまでも生物学的な繁殖の話であって、結婚の話ではありませんので、あしからず）。</p>
+<p>この例は、そのままでもよいのですが、遺伝子を加えてやればもっとおもしろいものになります。ここでは生物学のまねごとをするために目の色をコントロールする遺伝子を2つ加えて、オーバーロードを使って親から受け継いだ遺伝子を合成してみます。</p>
+
+</div>
+<h3 id="-5">演算子のオーバーロードとは?</h3>
+<div id="CONTENT-5">
+<p>オーバーロードはMoose特有の機能「ではありません」。Perlでは<code>overload</code>プラグマを使って実装されている一般的なオブジェクト指向のコンセプトです。オーバーロードを使うと、加算演算子(<code>+</code>)のようにPerlの組み込み演算子とオブジェクトを組み合わせて使うとき、あるいはオブジェクトを文字列として扱うときに有意義な処理をさせられます。</p>
+<p>この例では、加算をオーバーロードして、<code>$child = $mother + $father</code>のようなコードを書けるようにしています。</p>
+
+</div>
+<h2 id="-6">遺伝子</h2>
+<div id="CONTENT-6">
+<p>目の色に影響を与える遺伝子はたくさんありますが、もっとも重要なのは<i>gey</i>と<i>bey2</i>の2つです。ここではそれぞれの遺伝子にクラスを用意するところから始めましょう。</p>
+
+</div>
+<h3 id="Human_Gene_bey2">Human::Gene::bey2</h3>
+<div id="Human_Gene_bey2_CONTENT">
+<pre>  package Human::Gene::bey2;
+
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  type 'bey2_color' =&gt; where { $_ =~ m{^(?:brown|blue)$} };
+
+  has 'color' =&gt; ( is =&gt; 'ro', isa =&gt; 'bey2_color' );
+
+</pre>
+<p>このクラスはたいしたことはありません。許される色についての型制約と、<code>color</code>というアトリビュートがあるだけです。</p>
+
+</div>
+<h3 id="Human_Gene_gey">Human::Gene::gey</h3>
+<div id="Human_Gene_gey_CONTENT">
+<pre>  package Human::Gene::gey;
+
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  type 'gey_color' =&gt; where { $_ =~ m{^(?:green|blue)$} };
+
+  has 'color' =&gt; ( is =&gt; 'ro', isa =&gt; 'gey_color' );
+
+</pre>
+<p>これも<code>Humane::Gene::bey2</code>クラスとほとんど同じですが、許される色が異なっています。</p>
+
+</div>
+<h2 id="-7">目の色</h2>
+<div id="CONTENT-7">
+<p><code>Human</code>クラスに（それぞれの遺伝子について2つずつ）4つのアトリビュートを用意することもできますが、それではいささかごちゃごちゃしてしまいますので、かわりに遺伝子を<code>Human::EyeColor</code>というコンテナクラスに入れて抽象化することにします。こうすると、<code>Human</code>には<code>eye_color</code>というアトリビュートさえ用意しておけばよくなります。</p>
+<pre>  package Human::EyeColor;
+
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  coerce 'Human::Gene::bey2'
+      =&gt; from 'Str'
+          =&gt; via { Human::Gene::bey2-&gt;new( color =&gt; $_ ) };
+
+  coerce 'Human::Gene::gey'
+      =&gt; from 'Str'
+          =&gt; via { Human::Gene::gey-&gt;new( color =&gt; $_ ) };
+
+  has [qw( bey2_1 bey2_2 )] =&gt;
+      ( is =&gt; 'ro', isa =&gt; 'Human::Gene::bey2', coerce =&gt; 1 );
+
+  has [qw( gey_1 gey_2 )] =&gt;
+      ( is =&gt; 'ro', isa =&gt; 'Human::Gene::gey', coerce =&gt; 1 );
+
+</pre>
+<p>目の色をあらわすクラスには遺伝子がそれぞれ2つずつ用意されています。また、それぞれのクラスの型変換も用意して、文字列を新しいオブジェクトに変換できるようにしてあります。ただし、「indigo」のような文字列を変換しようとすると、型変換は失敗します。どちらの遺伝子もこの色を有効とは認めないためです。</p>
+<p>ついでながら、この例を見ると、<code>has</code>の第1引数に名前の配列リファレンスを渡すと、同じアトリビュートを一度に複数個定義できるのがわかります。</p>
+<p>それから、遺伝子の組み合わせから実際の目の色を計算するメソッドが必要です。<i>bey2</i>の茶色の遺伝子は青と緑の遺伝子より優性で、<i>gey</i>の緑の遺伝子は青より優性です。</p>
+<pre>  sub color {
+      my ($self) = @_;
+
+      return 'brown'
+          if ( $self-&gt;bey2_1-&gt;color() eq 'brown'
+          or $self-&gt;bey2_2-&gt;color() eq 'brown' );
+
+      return 'green'
+          if ( $self-&gt;gey_1-&gt;color() eq 'green'
+          or $self-&gt;gey_2-&gt;color() eq 'green' );
+
+      return 'blue';
+  }
+
+</pre>
+<p><code>Human::EyeColor</code>オブジェクトは文字列としても扱えるようにしたいので、<code>Human::EyeColor</code>クラスに文字列のオーバーロードを定義しましょう。</p>
+<pre>  use overload '&quot;&quot;' =&gt; \&amp;color, fallback =&gt; 1;
+
+</pre>
+<p>最後に、加算のオーバーロードを定義する必要があります。これで、<code>Human::EyeColor</code>オブジェクトを足しあわせると、新しい（遺伝子学的に正しい）目の色をした新しい<code>Human::EyeColor</code>オブジェクトが得られるようになります。</p>
+<pre>  use overload '+' =&gt; \&amp;_overload_add, fallback =&gt; 1;
+
+  sub _overload_add {
+      my ( $one, $two ) = @_;
+
+      my $one_bey2 = 'bey2_' . _rand2();
+      my $two_bey2 = 'bey2_' . _rand2();
+
+      my $one_gey = 'gey_' . _rand2();
+      my $two_gey = 'gey_' . _rand2();
+
+      return Human::EyeColor-&gt;new(
+          bey2_1 =&gt; $one-&gt;$one_bey2-&gt;color(),
+          bey2_2 =&gt; $two-&gt;$two_bey2-&gt;color(),
+          gey_1  =&gt; $one-&gt;$one_gey-&gt;color(),
+          gey_2  =&gt; $two-&gt;$two_gey-&gt;color(),
+      );
+  }
+
+  sub _rand2 {
+      return 1 + int( rand(2) );
+  }
+
+</pre>
+<p>目の色をあらわすオブジェクトを2つ足しあわせると、<code>_overload_add()</code>メソッドに2つの<code>Human::EyeColor</code>オブジェクトが渡され（<code>+</code>演算子の左項と右項です）、新しい<code>Human::EyeColor</code>オブジェクトが返ります。</p>
+
+</div>
+<h2 id="code_Human_code"><code>Human</code>に目の色を追加する</h2>
+<div id="code_Human_code_CONTENT">
+<p>新しい<code>Human::EyeColor</code>クラスは、もとの<code>Human</code>クラスを何ヶ所か変更するだけで組み込むことができます。</p>
+<pre>  use List::MoreUtils qw( zip );
+
+  coerce 'Human::EyeColor'
+      =&gt; from 'ArrayRef'
+      =&gt; via { my @genes = qw( bey2_1 bey2_2 gey_1 gey_2 );
+               return Human::EyeColor-&gt;new( zip( @genes, @{$_} ) ); };
+
+  has 'eye_color' =&gt; (
+      is       =&gt; 'ro',
+      isa      =&gt; 'Human::EyeColor',
+      coerce   =&gt; 1,
+      required =&gt; 1,
+  );
+
+</pre>
+<p>また、<code>Human</code>クラスの<code>_overload_add()</code>も目の色に対応できるように修正する必要があります。</p>
+<pre>  return Human-&gt;new(
+      gender    =&gt; $gender,
+      eye_color =&gt; ( $one-&gt;eye_color() + $two-&gt;eye_color() ),
+      mother    =&gt; $mother,
+      father    =&gt; $father,
+  );
+
+</pre>
+
+</div>
+<h2 id="-8">まとめ</h2>
+<div id="CONTENT-8">
+<p>ここで利用したオーバーロード、サブタイプ、型変換という3つのテクニックを組み合わせると強力なインタフェースを提供できます。</p>
+<p>オーバーロードの詳細については<cite>overload</cite>プラグマのドキュメントをご覧ください。</p>
+<p>ここで作成したコードの全体をまとめて見たい場合は<cite>t/000_recipes/basics/010_genes.t</cite>をご覧ください。</p>
+
+</div>
+<h2 id="-9">次のステップ</h2>
+<div id="CONTENT-9">
+<p>これが本物のプロジェクトだったとしたら、おそらく以下のようなものがほしくなるでしょう。</p>
+<dl>
+	<dt>Crypt::Randomを使った高度なランダム化</dt>
+	<dt>身体的特徴用のベースクラス</dt>
+	<dt>遺伝子の突然変異</dt>
+	<dt>追加の身体的特徴</dt>
+	<dt>人工生命</dt>
+</dl>
+
+</div>
+<h2 id="-10">作者</h2>
+<div id="CONTENT-10">
+<p>Aran Clary Deltac &lt;bluefeet@cpan.org&gt;</p>
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="LICENSE">LICENSE</h2>
+<div id="LICENSE_CONTENT">
+<p>This work is licensed under a Creative Commons Attribution 3.0 Unported License.</p>
+<p>License details are at: <a href="http://creativecommons.org/licenses/by/3.0/">http://creativecommons.org/licenses/by/3.0/</a></p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

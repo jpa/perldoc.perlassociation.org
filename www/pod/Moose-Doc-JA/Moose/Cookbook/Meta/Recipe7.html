@@ -1,0 +1,213 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Meta::Recipe7 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Meta::Recipe7</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">参照</a></li>
+<li><a href="#-6">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Meta::Recipe7 - グロブリファレンスをメタインスタンスのクラスにする</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package My::Meta::Instance;
+
+  use Scalar::Util qw( weaken );
+  use Symbol qw( gensym );
+
+  use Moose;
+  extends 'Moose::Meta::Instance';
+
+  sub create_instance {
+      my $self = shift;
+      my $sym = gensym();
+      bless $sym, $self-&gt;_class_name;
+  }
+
+  sub clone_instance {
+      my ( $self, $instance ) = @_;
+
+      my $new_sym = gensym();
+      %{*$new_sym} = %{*$instance};
+
+      bless $new_sym, $self-&gt;_class_name;
+  }
+
+  sub get_slot_value {
+      my ( $self, $instance, $slot_name ) = @_;
+      return *$instance-&gt;{$slot_name};
+  }
+
+  sub set_slot_value {
+      my ( $self, $instance, $slot_name, $value ) = @_;
+      *$instance-&gt;{$slot_name} = $value;
+  }
+
+  sub deinitialize_slot {
+      my ( $self, $instance, $slot_name ) = @_;
+      delete *$instance-&gt;{$slot_name};;
+  }
+
+  sub is_slot_initialized {
+      my ( $self, $instance, $slot_name, $value ) = @_;
+      exists *$instance-&gt;{$slot_name};;
+  }
+
+  sub weaken_slot_value {
+      my ( $self, $instance, $slot_name ) = @_;
+      weaken *$instance-&gt;{$slot_name};;
+  }
+
+  sub inline_create_instance {
+      my ( $self, $class_variable ) = @_;
+      return 'do { my $sym = Symbol::gensym(); bless $sym, ' . $class_variable . ' }';
+  }
+
+  sub inline_slot_access {
+      my ( $self, $instance, $slot_name ) = @_;
+      return '*{' . $instance . '}-&gt;{' . $slot_name . '}';
+  }
+
+  package MyApp::User;
+
+  use metaclass 'Moose::Meta::Class' =&gt;
+      ( instance_metaclass =&gt; 'My::Meta::Instance' );
+
+  use Moose;
+
+  has 'name' =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Str',
+  );
+
+  has 'email' =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Str',
+  );
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>このレシピでは自前のメタインスタンスの作り方を紹介します。メタインスタンスというのはオブジェクトのインスタンスを作るメタクラスのことで、アトリビュートスロットへのアクセスを管理する手助けをします。</p>
+<p>ここで作るメタインスタンスは、ハッシュリファレンスではなく、グロブリファレンスベースのものです（この例の元ネタはおもにPiotr Roszatyckiの<cite>MooseX::GlobRef</cite>モジュールです）。</p>
+<p>私たちのクラスは<cite>Moose::Meta::Instance</cite>のサブクラスですが、これはハッシュリファレンスベースのオブジェクトを作るものなので、オブジェクトのデータ構造がそうなっていることを前提にしているメソッドはすべてオーバーライドする必要があります。</p>
+<p>最初にオーバーライドするメソッドは<code>create_instance</code>です。</p>
+<pre>  sub create_instance {
+      my $self = shift;
+      my $sym = gensym();
+      bless $sym, $self-&gt;_class_name;
+  }
+
+</pre>
+<p>ここではメタインスタンスに紐づけられたクラスでblessされたグロブリファレンスを返します。</p>
+<p>また、<code>clone_instance</code>もオーバーライドして、新しいグロブリファレンスを生成するようにします。</p>
+<pre>  sub clone_instance {
+      my ( $self, $instance ) = @_;
+
+      my $new_sym = gensym();
+      %{*$new_sym} = %{*$instance};
+
+      bless $new_sym, $self-&gt;_class_name;
+  }
+
+</pre>
+<p>それから、オブジェクトのスロットへのアクセスを仲介する一連のメソッドがあります（「スロット」というのはアトリビュートが保存される場所です）。デフォルトのインスタンスクラスでは、オブジェクトはハッシュリファレンスであることが期待されていますが、ここを、グロブリファレンスであることを期待するように変更する必要があります。</p>
+<pre>  sub get_slot_value {
+      my ( $self, $instance, $slot_name ) = @_;
+      *$instance-&gt;{$slot_name};;
+  }
+
+</pre>
+<p>このレベルの回り道をすると、おそらくインスタンスクラスはデフォルトのものより「遅く」なってしまいますが、アトリビュートのアクセスをインライン展開してしまえば、この参照はキャッシュされます。</p>
+<pre>  sub inline_create_instance {
+      my ( $self, $class_variable ) = @_;
+      return 'do { my $sym = Symbol::gensym(); bless $sym, ' . $class_variable . ' }';
+  }
+
+</pre>
+<p><code>inline_slot_access</code>メソッドが返すコード片は、ひとつのアトリビュートにつき1度<code>eval</code>されます。</p>
+<p>最後に、<code>MyApp::User</code>クラスの中でこのメタインスタンスを使うようにします。</p>
+<pre>  use metaclass 'Moose::Meta::Class' =&gt;
+      ( instance_metaclass =&gt; 'My::Meta::Instance' );
+
+</pre>
+<p>実際にはほとんどの場合、<cite>metaclass</cite>の利用は推奨しません。ただし、もう一方の、メタクラスの代用品を利用するやり方はもっと複雑ですし、例題のコードも必要以上に込み入ったものになってしまいます。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>このレシピでは独自のメタインスタンスクラスの作り方を紹介しました。みなさんがここまでする必要はなさそうですが、Mooseが裏でどのような動きをしているかを見てみるのも一興です。</p>
+
+</div>
+<h2 id="-5">参照</h2>
+<div id="CONTENT-5">
+<p>CPANにはメタインスタンスクラスの拡張モジュールがいくつかあります。</p>
+<dl>
+	<dt>* <cite>MooseX::Singleton</cite></dt>
+	<dd>
+		<p>このモジュールはインスタンスクラスを拡張してオブジェクトが確実にシングルトンになるようにします（ただし、このモジュールが利用するインスタンスはそれでもblessされたハッシュリファレンスのままです）。</p>
+	</dd>
+	<dt>* <cite>MooseX::GlobRef</cite></dt>
+	<dd>
+		<p>このモジュールはインスタンスをblessされたグロブリファレンスにします。こうするとハンドルをオブジェクトインスタンスとして利用できるようになります。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-6">作者</h2>
+<div id="CONTENT-6">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

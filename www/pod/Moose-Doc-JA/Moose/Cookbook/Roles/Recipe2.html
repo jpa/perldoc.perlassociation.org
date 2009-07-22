@@ -1,0 +1,164 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Roles::Recipe2 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Roles::Recipe2</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">脚注</a></li>
+<li><a href="#-6">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Roles::Recipe2 - 高度なロールの合成――メソッドの排除と別名</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package Restartable;
+  use Moose::Role;
+
+  has 'is_paused' =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'Bool',
+      default =&gt; 0,
+  );
+
+  requires 'save_state', 'load_state';
+
+  sub stop { 1 }
+
+  sub start { 1 }
+
+  package Restartable::ButUnreliable;
+  use Moose::Role;
+
+  with 'Restartable' =&gt; {
+      alias =&gt; {
+          stop  =&gt; '_stop',
+          start =&gt; '_start'
+      }
+  };
+
+  sub stop {
+      my $self = shift;
+
+      $self-&gt;explode() if rand(1) &gt; .5;
+
+      $self-&gt;_stop();
+  }
+
+  sub start {
+      my $self = shift;
+
+      $self-&gt;explode() if rand(1) &gt; .5;
+
+      $self-&gt;_start();
+  }
+
+  package Restartable::ButBroken;
+  use Moose::Role;
+
+  with 'Restartable' =&gt; { excludes =&gt; [ 'stop', 'start' ] };
+
+  sub stop {
+      my $self = shift;
+
+      $self-&gt;explode();
+  }
+
+  sub start {
+      my $self = shift;
+
+      $self-&gt;explode();
+  }
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>この例では、ロールのどのメソッドを取り込むを細かくコントロールするやり方を説明します。ここでは<code>Restartable</code>というロールを用意しました。これには<code>is_paused</code>というアトリビュートと、<code>stop</code>と<code>start</code>という2つのメソッドがあります。</p>
+<p>それから、もう2つ、インタフェースは同じですが、それぞれ<code>stop</code>メソッドと<code>start</code>メソッドにひねりを加えたロールを用意します。</p>
+<p><code>Restartable::ButUnreliable</code>ロールでは<code>stop</code>と<code>start</code>の実装を新しくしつつ、もともとの実装も利用できるようにしたいので、<code>Restartable</code>のメソッドに別名をつけてプライベートメソッドにし、もとのメソッドの方にラッパを用意することにします。(1)</p>
+<pre>  with 'Restartable' =&gt; {
+      alias =&gt; {
+          stop  =&gt; '_stop',
+          start =&gt; '_start'
+      }
+  };
+
+</pre>
+<p><code>Restartable::ButBroken</code>ロールの方では、<code>stop</code>と<code>start</code>の振る舞いを一新したいので、<code>Restartable::ButBroken</code>に<code>Restartable</code>ロールを合成するときに<code>stop</code>と<code>start</code>を完全に排除してしまいます。</p>
+<p><code>excludes</code>パラメータは、排除したいメソッドがひとつだけの場合は引数に単一の文字列を取ることができることも特記しておきます。</p>
+<pre>  with 'Restartable' =&gt; { excludes =&gt; [ 'stop', 'start' ] };
+
+</pre>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>排除と別名は強力なツールですし、特にほかのロールからロールを生成する場合には便利に使えます。この例では、すべてのロールが<code>Restartable</code>ロールを実装しています。どのロールもAPIは同じですが、それぞれ裏では異なった実装になっています。</p>
+<p>別名と排除の機能は、ロールをクラスに合成するときも使えます。</p>
+
+</div>
+<h2 id="-5">脚注</h2>
+<div id="CONTENT-5">
+<dl>
+	<dt>(1)</dt>
+	<dd>
+		<p>ラッパに言及したことからおわかりの通り、メソッドモディファイアを利用しても同じことができますが、この例ではそうしていません。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-6">作者</h2>
+<div id="CONTENT-6">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

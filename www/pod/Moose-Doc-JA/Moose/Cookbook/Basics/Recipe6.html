@@ -1,0 +1,163 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Basics::Recipe6 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Basics::Recipe6</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Basics::Recipe6 - augment/innerの例</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package Document::Page;
+  use Moose;
+
+  has 'body' =&gt; ( is =&gt; 'rw', isa =&gt; 'Str', default =&gt; sub {''} );
+
+  sub create {
+      my $self = shift;
+      $self-&gt;open_page;
+      inner();
+      $self-&gt;close_page;
+  }
+
+  sub append_body {
+      my ( $self, $appendage ) = @_;
+      $self-&gt;body( $self-&gt;body . $appendage );
+  }
+
+  sub open_page  { (shift)-&gt;append_body('&lt;page&gt;') }
+  sub close_page { (shift)-&gt;append_body('&lt;/page&gt;') }
+
+  package Document::PageWithHeadersAndFooters;
+  use Moose;
+
+  extends 'Document::Page';
+
+  augment 'create' =&gt; sub {
+      my $self = shift;
+      $self-&gt;create_header;
+      inner();
+      $self-&gt;create_footer;
+  };
+
+  sub create_header { (shift)-&gt;append_body('&lt;header/&gt;') }
+  sub create_footer { (shift)-&gt;append_body('&lt;footer/&gt;') }
+
+  package TPSReport;
+  use Moose;
+
+  extends 'Document::PageWithHeadersAndFooters';
+
+  augment 'create' =&gt; sub {
+      my $self = shift;
+      $self-&gt;create_tps_report;
+      inner();
+  };
+
+  sub create_tps_report {
+      (shift)-&gt;append_body('&lt;report type=&quot;tps&quot;/&gt;');
+  }
+
+  # &lt;page&gt;&lt;header/&gt;&lt;report type=&quot;tps&quot;/&gt;&lt;footer/&gt;&lt;/page&gt;
+  my $report_xml = TPSReport-&gt;new-&gt;create;
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>このレシピでは<code>augment</code>メソッドモディファイアの動作を紹介します。このモディファイアは通常のサブクラスから親クラスへというメソッド解決順序を逆転させるものです。<code>augment</code>を使うと、「もっとも具体的でない（抽象的な）」メソッドがまず呼ばれ、<code>inner</code>を呼ぶたびに継承ツリーをたどって、もっとも具体的なサブクラスで終わります。</p>
+<p><code>augment</code>モディファイアを使って設計した親クラスは、具体的に拡張していくことができます（親クラスでは一般的なラッパ機能を用意し、サブクラスを使って詳細を詰めていきます）。</p>
+<p>上の例では、ドキュメントクラスを一組作りました。もっとも具体的なものは<code>TPSReport</code>です。</p>
+<p>まずはもっとも具体的でない<code>Document::Page</code>から見ていきましょう。<code>Document::Page</code>の<code>create</code>メソッドには<code>inner()</code>の呼び出しがあります。</p>
+<pre>  sub create {
+      my $self = shift;
+      $self-&gt;open_page;
+      inner();
+      $self-&gt;close_page;
+  }
+
+</pre>
+<p>この<code>inner</code>は<code>Moose</code>がエクスポートしている関数で、<code>augment</code>されたメソッドで使える<code>super</code>のようなものです。<code>inner</code>が呼ばれると、Mooseはチェーンの中から次のメソッドを探します（この場合は<code>Document::PageWithHeadersAndFooters</code>の<code>augment</code>モディファイア）。お気づきの通り、<code>inner</code>はモディファイアの中でも呼べます。</p>
+<pre>  augment 'create' =&gt; sub {
+      my $self = shift;
+      $self-&gt;create_header;
+      inner();
+      $self-&gt;create_footer;
+  };
+
+</pre>
+<p>すると、次の、もっとも具体的なモディファイアが見つかります（<code>TPSReport</code>クラスのものです）。</p>
+<p>最後、<code>TPSReport</code>クラスでチェーンは終わりです。</p>
+<pre>  augment 'create' =&gt; sub {
+      my $self = shift;
+      $self-&gt;create_tps_report;
+      inner();
+  };
+
+</pre>
+<p>もう一度<code>inner</code>関数を呼んでいますが、これ以上具体的なサブクラスはありませんので、ここでは何もしません。この呼び出しを入れておくと、将来<code>TPSReport</code>を簡単にサブクラス化できるようになります。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p><code>augment</code>モディファイアは、ネストしたラッパを作成できる強力なツールです。始終必要になるものではありませんが、必要なときには非常に役に立ちます。</p>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Stevan Little &lt;stevan@iinteractive.com&gt;</p>
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2007-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

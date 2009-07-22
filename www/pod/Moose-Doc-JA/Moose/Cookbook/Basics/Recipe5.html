@@ -1,0 +1,204 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Basics::Recipe5 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Basics::Recipe5</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">本文</a></li>
+<li><a href="#-4">まとめ</a></li>
+<li><a href="#-5">脚注</a></li>
+<li><a href="#-6">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Basics::Recipe5 - サブタイプふたたび、<strong>Request</strong>クラスの型変換</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package Request;
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  use HTTP::Headers  ();
+  use Params::Coerce ();
+  use URI            ();
+
+  subtype 'My::Types::HTTP::Headers' =&gt; as class_type('HTTP::Headers');
+
+  coerce 'My::Types::HTTP::Headers'
+      =&gt; from 'ArrayRef'
+          =&gt; via { HTTP::Headers-&gt;new( @{$_} ) }
+      =&gt; from 'HashRef'
+          =&gt; via { HTTP::Headers-&gt;new( %{$_} ) };
+
+  subtype 'My::Types::URI' =&gt; as class_type('URI');
+
+  coerce 'My::Types::URI'
+      =&gt; from 'Object'
+          =&gt; via { $_-&gt;isa('URI')
+                   ? $_
+                   : Params::Coerce::coerce( 'URI', $_ ); }
+      =&gt; from 'Str'
+          =&gt; via { URI-&gt;new( $_, 'http' ) };
+
+  subtype 'Protocol'
+      =&gt; as 'Str'
+      =&gt; where { /^HTTP\/[0-9]\.[0-9]$/ };
+
+  has 'base' =&gt; ( is =&gt; 'rw', isa =&gt; 'My::Types::URI', coerce =&gt; 1 );
+  has 'uri'  =&gt; ( is =&gt; 'rw', isa =&gt; 'My::Types::URI', coerce =&gt; 1 );
+  has 'method'   =&gt; ( is =&gt; 'rw', isa =&gt; 'Str' );
+  has 'protocol' =&gt; ( is =&gt; 'rw', isa =&gt; 'Protocol' );
+  has 'headers'  =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'My::Types::HTTP::Headers',
+      coerce  =&gt; 1,
+      default =&gt; sub { HTTP::Headers-&gt;new }
+  );
+
+</pre>
+
+</div>
+<h2 id="-3">本文</h2>
+<div id="CONTENT-3">
+<p>このレシピでは<code>coerce</code>というシュガー関数で定義される型変換を紹介します。型変換は、既存の型制約と組み合わせて、ある型から別の型への（一方的な）変換を定義するものです。</p>
+<p>これは非常に強力な機能ですが、魔術的な機能でもあるので、アトリビュートを型変換する際には明示的に、<code>coerce</code>というアトリビュートオプションを真に設定しなければなりません。</p>
+<p>まずはほかの型から型変換するサブタイプを作ります。</p>
+<pre>  subtype 'My::Types::HTTP::Headers' =&gt; as class_type('HTTP::Headers');
+
+</pre>
+<p>ここでは<code>HTTP::Headers</code>を直接型として利用するのではなく、サブタイプを作っています。これは、型変換はグローバルなものであるため、<code>Request</code>クラスで<code>HTTP::Headers</code>の型変換を定義すると、同じPerlインタプリタ上でMooseを使っている「すべての」クラスで同じ型変換が定義されてしまうためです。このような名前空間の汚染は避けるのが<b>ベストプラクティス</b> (<cite>Moose::Manual::BestPractices</cite>)です。</p>
+<p><code>class_type</code>というシュガー関数は単にこれのショートカットです。</p>
+<pre>  subtype 'HTTP::Headers'
+      =&gt; as 'Object'
+      =&gt; where { $_-&gt;isa('HTTP::Headers') };
+
+</pre>
+<p>Mooseを使っているクラスはすべて内部的に型制約が生成されますが、Mooseを使っていないクラスについては明示的に型を宣言しなければなりません。</p>
+<p>型を宣言しておくと、この先この新しい型を直接使えるようになります。</p>
+<pre>  has 'headers' =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'HTTP::Headers',
+      default =&gt; sub { HTTP::Headers-&gt;new }
+  );
+
+</pre>
+<p>これで、空の<cite>HTTP::Headers</cite>インスタンスがデフォルトの簡単なアトリビュートが生成されます。</p>
+<p><cite>HTTP::Headers</cite>のコンストラクタは、HTTPヘッダのフィールドに対応するキーと値の組のリストを受け付けます。Perlでは、このようなリストは配列リファレンスないしハッシュリファレンスに保存できますが、この<code>headers</code>アトリビュートでも、<strong>HTTP::Headers</strong>インスタンスのかわりにそういったデータ構造を受け付けて適切な処理をさせたいところ。こういうときこそ型変換の出番です。</p>
+<pre>  coerce 'My::Types::HTTP::Headers'
+      =&gt; from 'ArrayRef'
+          =&gt; via { HTTP::Headers-&gt;new( @{$_} ) }
+      =&gt; from 'HashRef'
+          =&gt; via { HTTP::Headers-&gt;new( %{$_} ) };
+
+</pre>
+<p><code>coerce</code>の最初の引数は、変換「先」の型です。そのあとには、<code>from</code>節と<code>via</code>節の組を続けます。<code>from</code>関数は別の型の名前を、<code>via</code>は実際に型変換を行うサブルーチンリファレンスを取ります。</p>
+<p>ただし、型変換を定義しても、Mooseに型変換したいアトリビュートを伝えないと何も起こりません。</p>
+<pre>  has 'headers' =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'My::Types::HTTP::Headers',
+      coerce  =&gt; 1,
+      default =&gt; sub { HTTP::Headers-&gt;new }
+  );
+
+</pre>
+<p>これで、<code>headers</code>を初期化するときに<code>ArrayRef</code>や<code>HashRef</code>を使うと、新しい<cite>HTTP::Headers</cite>インスタンスに変換されます。この型変換を用意すると、以下のコードはすべて同じ結果になります。</p>
+<pre>  $foo-&gt;headers( HTTP::Headers-&gt;new( bar =&gt; 1, baz =&gt; 2 ) );
+  $foo-&gt;headers( [ 'bar', 1, 'baz', 2 ] );
+  $foo-&gt;headers( { bar =&gt; 1, baz =&gt; 2 } );
+
+</pre>
+<p>ご覧の通り、型変換は気をつけて使うと型制約のチェックによる「安全性」を保ったままクラスのインタフェースを非常にオープンなものにできます。(1)</p>
+<p>次の型変換では、既存のCPANモジュールを使って型変換を実装する方法を紹介します（ここでは<cite>Params::Coerce</cite>を使います）。</p>
+<p><cite>URI</cite>クラスはMooseを使っていないので、今回もクラス型を宣言しておく必要があります。</p>
+<pre>  subtype 'My::Types::URI' =&gt; as class_type('URI');
+
+</pre>
+<p>続いて型変換を定義します。</p>
+<pre>  coerce 'My::Types::URI'
+      =&gt; from 'Object'
+          =&gt; via { $_-&gt;isa('URI')
+                   ? $_
+                   : Params::Coerce::coerce( 'URI', $_ ); }
+      =&gt; from 'Str'
+          =&gt; via { URI-&gt;new( $_, 'http' ) };
+
+</pre>
+<p>最初の型変換は、何らかのオブジェクトを受け取って<code>URI</code>オブジェクトに変換するものです。型変換システムはそれほど賢いものではありませんので、オブジェクトがもともと<cite>URI</cite>かどうかはチェックしません。そこで、そのチェックは自分でして、<cite>URI</cite>でなければ<cite>Params::Coerce</cite>に魔法をかけてもらい、その返り値を流用しています。</p>
+<p>もし（なんらかの事情で）<cite>Params::Coerce</cite>が<cite>URI</cite>オブジェクトを返さなかった場合は、型制約のエラーが発生します。</p>
+<p>もうひとつの型変換は、文字列を受け取って<cite>URI</cite>に変換するものです。この場合は、型変換を利用してデフォルトの振る舞いを適用しています（文字列は<code>http</code>のURIであると仮定しています）。</p>
+<p>最後に、アトリビュートの型変換を忘れずに有効にしておく必要があります。</p>
+<pre>  has 'base' =&gt; ( is =&gt; 'rw', isa =&gt; 'My::Types::URI', coerce =&gt; 1 );
+  has 'uri'  =&gt; ( is =&gt; 'rw', isa =&gt; 'My::Types::URI', coerce =&gt; 1 );
+
+</pre>
+<p>型変換を再利用すると、複数のアトリビュートで首尾一貫したAPIを強制することができます。</p>
+
+</div>
+<h2 id="-4">まとめ</h2>
+<div id="CONTENT-4">
+<p>このレシピでは、型変換を利用してより柔軟で物わかりのよいAPIを生成する方法を紹介しました。ただし、強力な魔法を使うときはいつでもそうですが、多少用心することをおすすめします。場合によっては値をどう処理するのがよいか推測するより、拒否してしまう方がよい場合もあるのですから。</p>
+<p>また、新しい<code>Object</code>のサブタイプを定義するショートカットとして、<code>class_type</code>というシュガー関数を使う方法も紹介しました。</p>
+
+</div>
+<h2 id="-5">脚注</h2>
+<div id="CONTENT-5">
+<dl>
+	<dt>(1)</dt>
+	<dd>
+		<p>この例に限ってはもっと安全にできます。本当は要素の数が偶数の配列のみ型変換したいのですから、新たに<code>EvenElementArrayRef</code>という型を用意して、プレーンな<code>ArrayRef</code>ではなく、その型から変換するようにすればよいのです。</p>
+	</dd>
+</dl>
+
+</div>
+<h2 id="-6">作者</h2>
+<div id="CONTENT-6">
+<p>Stevan Little &lt;stevan@iinteractive.com&gt;</p>
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

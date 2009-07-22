@@ -1,0 +1,91 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Meta::Recipe1 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Meta::Recipe1</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">要約</a>
+<ul>
+<li>
+<ul><li><a href="#-3">例</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-4">参照</a></li>
+<li><a href="#-5">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Meta::Recipe1 - メタの世界へようこそ（メタを使うわけ）</p>
+
+</div>
+<h2 id="-2">要約</h2>
+<div id="CONTENT-2">
+<p>まだの方は<cite>Moose::Manual::MOP</cite>を読んでおいた方がよいかもしれません。</p>
+<p>「Mooseはすごいけど、×××のやり方が違っていればよかったのに」と思ったことがある方はもうメタの世界に足を踏み入れています。メタのレシピでは、メタクラス（<cite>Moose::Meta::Class</cite>や<cite>Moose::Meta::Attribute</cite>など）の働きを拡張したりオーバーライドすることでMooseの動作を変えたり拡張する方法を説明します。</p>
+<p>メタクラスのAPIは、クラスやロール、アトリビュートなどを記述する一連のクラスからなります。メタクラスのAPIを使うと、クラスに「どんなアトリビュートがあるのか」とか「どんなロールが組み込まれているのか」といった問い合わせができるようになります。</p>
+<p>また、メタクラスのシステムを使うと、クラスに、たとえば新しいメソッドやアトリビュートを追加するといった変更を加えることができます。</p>
+<p><b>Moose.pm</b> (<cite>Moose</cite>)が提供するインタフェース(<code>has</code>、<code>with</code>、<code>extends</code>)は、奥に隠れているメタクラスシステムに対する薄いシンタックスシュガーにすぎません。</p>
+<p>このメタクラスシステムの動作を拡張したり変更することによって、独自のMooseもどきを作ることもできます。</p>
+
+</div>
+<h3 id="-3">例</h3>
+<div id="CONTENT-3">
+<p>アトリビュートにプロパティを追加したいとしましょう。具体的にいうと、各アトリビュートに「label」というプロパティを追加して、<code>My::Class-&gt;meta()-&gt;get_attribute('size')-&gt;label()</code>と書けるようにしたい、とします。最初の2つのレシピは、これを2通りのやり方で実現するものです（ひとつはメタアトリビュートの完全なサブクラスを利用するやり方、もうひとつはアトリビュートのトレートを利用するやり方です）。</p>
+<p>あるいは、メタクラスにもプロパティを追加したい場合もあるかもしれません。たとえば、MooseベースのORMを書いているとしたら、クラスのメタクラスオブジェクトを利用して各クラスにテーブル名を関連づけ、<code>My::Class-&gt;meta()-&gt;table_name()</code>と書けるようにしたくなるかもしれません。</p>
+
+</div>
+<h2 id="-4">参照</h2>
+<div id="CONTENT-4">
+<p>CPANにあがっているMooseXモジュールの多くは、メタクラスの拡張を実装したものです。その好例としては、<cite>MooseX::Singleton</cite>と<cite>MooseX::AttributeHelpers</cite>などがあります。もっと複雑な例については、<cite>Fey::ORM</cite>や<cite>Reaction</cite>をご覧ください。</p>
+
+</div>
+<h2 id="-5">作者</h2>
+<div id="CONTENT-5">
+<p>Dave Rolsky &lt;autarch@urth.org&lt;gt&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

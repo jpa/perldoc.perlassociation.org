@@ -1,0 +1,298 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Extending::Recipe1 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Extending::Recipe1</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">本文</a>
+<ul>
+<li>
+<ul><li><a href="#-3">ほかの拡張モジュールとうまくつきあう</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#Moose">Mooseを拡張できるポイント</a>
+<ul>
+<li>
+<ul><li><a href="#-4">メタクラスの拡張</a></li>
+<li><a href="#-5">シュガー関数の提供</a></li>
+<li><a href="#-6">オブジェクトクラスの拡張</a></li>
+<li><a href="#-7">ロールを提供する</a></li>
+<li><a href="#-8">新しい型</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-9">ロールとトレートとサブクラス</a></li>
+<li><a href="#-10">自作の拡張モジュールを使う</a>
+<ul>
+<li>
+<ul><li><a href="#-11">メタクラスのトレートとしての拡張モジュール</a></li>
+<li><a href="#-12">メタクラス（およびベースオブジェクト）のサブクラスとしての拡張モジュール</a></li>
+<li><a href="#-13">メタクラス（およびベースオブジェクト）のロールとしての拡張モジュール</a></li>
+<li><a href="#-14">シュガー関数を提供する</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-15">従来の拡張のメカニズム</a></li>
+<li><a href="#-16">まとめ</a></li>
+<li><a href="#-17">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Extending::Recipe1 - Mooseの拡張モジュール概観</p>
+
+</div>
+<h2 id="-2">本文</h2>
+<div id="CONTENT-2">
+<p>Mooseには拡張モジュールを割り込ませてMooseそのものの振る舞いを変えるやり方がいくつかあります。また、振る舞いを変えられる部分もたくさんあります。このレシピではそれぞれの拡張メソッドの概要とともに、おすすめのツールをいくつか紹介します。</p>
+<p>まだメタクラスのレシピを読んでいない方は、そちらを先にご覧ください。メタクラスを理解しないままMooseの拡張モジュールを書くことはできませんし、そちらのレシピではメタクラスのサブクラスやトレートのような基本的な拡張のメカニズムを説明しています。</p>
+
+</div>
+<h3 id="-3">ほかの拡張モジュールとうまくつきあう</h3>
+<div id="CONTENT-3">
+<p>このドキュメントを書いた目的のひとつは、ほかの拡張モジュールと相性のよい拡張モジュールを作る手助けをすることです。これは、拡張モジュールをCPANにリリースするつもりがあるなら特に大事なことです。</p>
+<p>Mooseには相性のよい拡張モジュールを書くときに役立つモジュールがいくつかあります。<cite>Moose::Exporter</cite>や<cite>Moose::Util::MetaRole</cite>を使うと、Mooseのコア機能だけでなく、これらのモジュールを使っているほかのCPANモジュールとも確実に組み合わせられるようになります。</p>
+
+</div>
+<h2 id="Moose">Mooseを拡張できるポイント</h2>
+<div id="Moose_CONTENT">
+<p>みなさんがMooseの拡張モジュールでしたいと思うようなことは、大きくいくつかのカテゴリーに分類できます。</p>
+
+</div>
+<h3 id="-4">メタクラスの拡張</h3>
+<div id="CONTENT-4">
+<p>Mooseを拡張する方法のひとつは、Mooseのメタクラスを拡張することです。たとえば、<cite>Moose::Cookbook::Meta::Recipe4</cite>ではメタクラスに<code>table</code>アトリビュートを追加するサブクラスの例を見ました。ORMを書いている人にとっては、これは理にかなった拡張といえるでしょう。</p>
+<p>CPANにあがっている拡張モジュールの多くは、アトリビュートのメタクラスを拡張するものです。たとえば、<cite>MooseX::AttributeHelpers</cite>というディストリビューションは、オブジェクト以外のアトリビュート（ハッシュリファレンスや単なる数）にも振る舞いを委譲する新しいアトリビュートメタクラスを提供するものです。</p>
+<p>メタクラスを拡張するモジュールは、サブクラスとしても、ロール／トレートとしてもパッケージングできますが、サブクラスにするよりはトレートにすることをおすすめします。サブクラスをたくさん合成するより、バラバラなトレートを合成する方がはるかに簡単ですから。</p>
+<p>拡張モジュールをロールとして実装する場合は、<cite>Moose::Util::MetaRole</cite>モジュールを利用できます。</p>
+
+</div>
+<h3 id="-5">シュガー関数の提供</h3>
+<div id="CONTENT-5">
+<p>メタクラスを拡張するモジュールの場合、その構成要素の一部として、<b>Moose.pm</b> (<cite>Moose</cite>)がしているのと同じようにシュガー関数を提供したくなる場合もあるかもしれません。Mooseにはこれを非常に簡単にする<cite>Moose::Exporter</cite>というヘルパーモジュールがあります（<cite>Moose::Exporter</cite>はこの先のレシピでも何度か利用します）。</p>
+
+</div>
+<h3 id="-6">オブジェクトクラスの拡張</h3>
+<div id="CONTENT-6">
+<p>Mooseを拡張する常套手段としてはもうひとつ、デフォルトのオブジェクトクラスの振る舞いを変えるというテクニックがあります。たとえば、<cite>MooseX::Singleton</cite>モジュールはオブジェクトの振る舞いを変えてシングルトンにしてくれますし、<cite>MooseX::StrictConstructor</cite>モジュールを使うと、対応するアトリビュートがない引数はコンストラクタが拒否するようになります。</p>
+<p>オブジェクトクラスの拡張モジュールにはしばしばメタクラスの拡張モジュールも含まれています。特に、クラスを不変化したときでもオブジェクトの拡張を動作させたい場合は、<cite>Moose::Meta::Instance</cite>や<cite>Moose::Meta::Method::Constructor</cite>、<cite>Moose::Meta::Method::Destructor</cite>といったオブジェクトをいくつか（あるいはすべて）拡張する必要があるかもしれません。</p>
+<p><cite>Moose::Util::MetaRole</cite>というモジュールを使うと、前述したメタクラスだけでなく、オブジェクトのベースクラスにもロールを組み込めるようになります。</p>
+
+</div>
+<h3 id="-7">ロールを提供する</h3>
+<div id="CONTENT-7">
+<p>拡張モジュールの中には、ユーザに取り込んでもらうロールの形をとっているものもあります。<cite>MooseX::Object::Pluggable</cite>というモジュールがその好例です（実はこれ、<code>MooseX</code>という名前はついていますが、実際にはMooseの振る舞いを変更するものではなく、プラガブルにしたいオブジェクトに取り込ませることのできるロールにすぎないのです）。</p>
+<p>この手の拡張モジュールを実装する場合は、特に何かをする必要はありません。単にロールを作って、ドキュメントにはいつものように<code>with</code>というシュガー関数経由で使ってください、と書くだけです。</p>
+<pre>   package MyApp::User;
+
+   use Moose;
+
+   with 'MooseX::My::Role';
+
+</pre>
+
+</div>
+<h3 id="-8">新しい型</h3>
+<div id="CONTENT-8">
+<p>もうひとつよくあるMooseの拡張モジュールとして、Mooseの型システムに新しい型を追加するものがあります。この場合は単にモジュールの中で型を作るだけです。ユーザがそのモジュールをロードしたら、型が作られ、以後はその名前で型を参照できるようになります。これの実例としては、<cite>MooseX::Types::URI</cite>と<cite>MooseX::Types::DateTime</cite>というディストリビューションがあげられます。いずれも<cite>MooseX::Types</cite>モジュールを下敷きにして作られたものです。</p>
+
+</div>
+<h2 id="-9">ロールとトレートとサブクラス</h2>
+<div id="CONTENT-9">
+<p>これはぜひ理解しておいていただきたいのですが、<strong>ロールとトレートは同じものです</strong>。ロールはトレートとしても使えますし、トレートはロールでもあります。唯一の違いは、トレートは名前の一部を省略してもMooseがクラス名を導き出せるようにパッケージングされていることです。言い換えると、トレートの場合は「Big」のような短縮表記で呼び出せるし、Mooseはそこから<code>MooseX::Embiggen::Meta::Attribute::Role::Big</code>のようなクラス名を導き出せる、ということです。</p>
+<p>実際にトレートを利用している例については、<cite>Moose::Cookbook::Meta::Recipe3</cite>や<cite>Moose::Cookbook::Meta::Recipe5</cite>をご覧ください。いずれも特にトレートの名前解決メカニズムを紹介しています。</p>
+<p>拡張モジュールをメタクラスやベースオブジェクトのロールとして実装すると、ほかのモジュールとの相性がよくなります。エンドユーザがメタクラスのサブクラスをいくつも効果的に合成するのは大変なことですが、ロールを合成するのはごく簡単なことだからです。</p>
+
+</div>
+<h2 id="-10">自作の拡張モジュールを使う</h2>
+<div id="CONTENT-10">
+<p>拡張モジュールを組み込めるポイントはいくつもあります。場合によっては自作の拡張モジュールを複数の方法で取り込めるようにすることもできます。</p>
+
+</div>
+<h3 id="-11">メタクラスのトレートとしての拡張モジュール</h3>
+<div id="CONTENT-11">
+<p>トレートとしても使える拡張モジュールであれば、エンドユーザには単にトレートのリストの中に名前を入れておいてください、と言うことができます（いまのところこの手が使えるのは（クラスの）メタクラスとアトリビュートのメタクラスのトレートのみですが）。</p>
+<pre>  use Moose -traits =&gt; [ 'Big', 'Blue' ];
+
+  has 'animal' =&gt; (
+      traits =&gt; [ 'Big', 'Blue' ],
+      ...
+  );
+
+</pre>
+<p>ほかのメタクラスやオブジェクトのベースクラスに組み込める拡張モジュールの場合は、トレートのメカニズムを利用することはできません。</p>
+<p>トレートのメカニズムの利点は、トレートがコードのどこで組み込まれているかが非常にわかりやすいことです。また、トレートを組み込む対象についても、取り込む側の方で細かくコントロールできます（特にアトリビュートのトレートの場合はそうです。アトリビュートのトレートは、クラスのひとつのアトリビュートだけに組み込むこともできます）。</p>
+
+</div>
+<h3 id="-12">メタクラス（およびベースオブジェクト）のサブクラスとしての拡張モジュール</h3>
+<div id="CONTENT-12">
+<p>Mooseには、取り込む側の方で使いたいサブクラスを指定できるような簡単なAPIは用意されていません（例外はアトリビュートのメタクラスです。アトリビュートの宣言には、拡張モジュールを取り込む側がサブクラスを指定するのに使える<code>metaclass</code>というオプションがあります）。</p>
+<p>これが、拡張モジュールをサブクラスとして実装するのはよくない、というひとつの理由になっているのですが、インポート時に呼び出し元に対して<code>Moose-&gt;init_meta</code>を実行して、別のメタクラスやベースオブジェクトクラスを指定すれば、特定のサブクラスの利用を強制することはできます。</p>
+<p>どうしてもそうしたい場合は、<cite>Moose::Exporter</cite>を使って<b>Moose.pm</b> (<cite>Moose</cite>)のシュガー関数を再エクスポートするようにしてください。<cite>Moose::Exporter</cite>を使うと、エクスポートするクラスに<code>init_meta</code>メソッドがある場合は、クラスがインポートされるときに確実にその<code>init_meta</code>メソッドを呼んでくれます。</p>
+<p>その<code>init_meta</code>の中で、呼び出し元に指定したサブクラスを利用するように手配できます。</p>
+<pre>  package MooseX::Embiggen;
+
+  use Moose ();
+  use Moose::Exporter;
+
+  use MooseX::Embiggen::Meta::Class;
+  use MooseX::Embiggen::Object;
+
+  Moose::Exporter-&gt;setup_import_methods( also =&gt; 'Moose' );
+
+  sub init_meta {
+      shift;    # just your package name
+      my %options = @_;
+
+      return Moose-&gt;init_meta(
+          for_class  =&gt; $options{for_class},
+          metaclass  =&gt; 'MooseX::Embiggen::Meta::Class',
+          base_class =&gt; 'MooseX::Embiggen::Object',
+      );
+  }
+
+</pre>
+<p>注意: <code>init_meta</code>は、<code>Moose-&gt;init_meta</code>がしているように、かならずメタクラスオブジェクトを返すようにしてください。</p>
+
+</div>
+<h3 id="-13">メタクラス（およびベースオブジェクト）のロールとしての拡張モジュール</h3>
+<div id="CONTENT-13">
+<p>拡張モジュールをメタクラスのロールとして実装すると、拡張モジュールを組み込みやすくなりますし、ほかのロールベースのメタクラスの拡張モジュールとの相性もよくなります。</p>
+<p>サブクラスの場合と同様に、ロールとして取り込んでもらいたい拡張モジュールも<cite>Moose::Exporter</cite>を利用する単一のモジュールとしてパッケージしたくなるかもしれませんが、この場合は<cite>Moose::Util::MetaRole</cite>を利用してすべてのロールを組み込むようにします。このモジュールを使う利点は、「すでにユーザのメタクラスに組み込まれているサブクラスやロールには手をつけない」ことです。これはつまり、「デフォルトで」拡張モジュールの相性がよくなるため、ユーザがほかのロールベースの拡張モジュールと簡単に組み合わせられるようになる、ということです。</p>
+<pre>  package MooseX::Embiggen;
+
+  use Moose ();
+  use Moose::Exporter;
+  use Moose::Util::MetaRole;
+
+  use MooseX::Embiggen::Role::Meta::Class;
+  use MooseX::Embiggen::Role::Meta::Attribute;
+  use MooseX::Embiggen::Role::Meta::Method::Constructor;
+  use MooseX::Embiggen::Role::Object;
+
+  Moose::Exporter-&gt;setup_import_methods( also =&gt; 'Moose' );
+
+  sub init_meta {
+      shift;    # just your package name
+      my %options = @_;
+
+      Moose-&gt;init_meta(%options);
+
+      my $meta = Moose::Util::MetaRole::apply_metaclass_roles(
+          for_class       =&gt; $options{for_class},
+          metaclass_roles =&gt; ['MooseX::Embiggen::Role::Meta::Class'],
+          attribute_metaclass_roles =&gt;
+              ['MooseX::Embiggen::Role::Meta::Attribute'],
+          constructor_class_roles =&gt;
+              ['MooseX::Embiggen::Role::Meta::Method::Constructor'],
+      );
+
+      Moose::Util::MetaRole::apply_base_class_roles(
+          for_class =&gt; $options{for_class},
+          roles     =&gt; ['MooseX::Embiggen::Role::Object'],
+      );
+
+      return $meta;
+  }
+
+</pre>
+<p>ご覧の通り、<cite>Moose::Util::MetaRole</cite>はどんなメタクラスにロールを組み込むときでも使えます（ベースオブジェクトクラスの場合も同様です）。拡張モジュールがロールを組み込んでも、ほかの拡張モジュールが組み込んだロールはそのまま残りますし、その逆も同様です。</p>
+
+</div>
+<h3 id="-14">シュガー関数を提供する</h3>
+<div id="CONTENT-14">
+<p><cite>Moose::Exporter</cite>を使うと、独自のシュガー関数をエクスポートすることができます。また、ほかのモジュールのシュガー関数をエクスポートすることもできます。</p>
+<pre>  package MooseX::Embiggen;
+
+  use Moose ();
+  use Moose::Exporter;
+
+  Moose::Exporter-&gt;setup_import_methods(
+      with_caller =&gt; ['embiggen'],
+      also        =&gt; 'Moose',
+  );
+
+  sub init_meta { ... }
+
+  sub embiggen {
+      my $caller = shift;
+      $caller-&gt;meta()-&gt;embiggen(@_);
+  }
+
+</pre>
+<p>こうすると、この拡張モジュールを取り込んだクラスでは<code>embiggen</code>サブルーチンを使うことができるようになります。</p>
+<pre>  package Consumer;
+
+  use MooseX::Embiggen;
+
+  extends 'Thing';
+
+  embiggen ...;
+
+</pre>
+<p>これをメタクラスやベースクラスのロールと合成するのはごく簡単です。</p>
+
+</div>
+<h2 id="-15">従来の拡張のメカニズム</h2>
+<div id="CONTENT-15">
+<p><cite>Moose::Exporter</cite>や<cite>Moose::Util::MetaRole</cite>が登場する前にも、Mooseを拡張する方法はいくつもありました。ただし、一般的に、これらのメソッドはあまり相性がよくありませんし、拡張モジュールがひとつのときにしかうまく動きませんでした。</p>
+<p>そういったメソッドの例としては、<b>metaclass.pm</b> (<cite>metaclass</cite>)や<cite>Moose::Policy</cite>（これは裏で<b>metaclass.pm</b> (<cite>metaclass</cite>)を利用しています）、それから<cite>Moose::Exporter</cite>がしているさまざまなハックをするものがありますが、みなさんの拡張モジュールではそういったメソッドを使わないようにしてください。</p>
+<p>念のため、相性のよい拡張モジュールを書けば、古い拡張モジュールと組み合わせることもできます（一般的に古い拡張モジュールはお互いに相性がよくないものですが）。</p>
+
+</div>
+<h2 id="-16">まとめ</h2>
+<div id="CONTENT-16">
+<p>拡張モジュールを書くとき、メタクラスやベースオブジェクトのロールとして書けそうならぜひそうしてください。<cite>Moose::Exporter</cite>や<cite>Moose::Util::MetaRole</cite>のドキュメントを読んでおくのもお忘れなく。</p>
+
+</div>
+<h2 id="-17">作者</h2>
+<div id="CONTENT-17">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

@@ -1,0 +1,567 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual::Attributes Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual::Attributes</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">はじめに</a></li>
+<li><a href="#-3">アトリビュートのオプション</a>
+<ul>
+<li>
+<ul><li><a href="#-4">読み書き可能と読み取り専用</a></li>
+<li><a href="#-5">アクセサメソッド</a></li>
+<li><a href="#predicate_clearer">断定用のメソッド(predicate)とクリア用のメソッド(clearer)</a></li>
+<li><a href="#-6">必須かどうか</a></li>
+<li><a href="#-7">デフォルト値とビルダーメソッド</a>
+<ul><li><a href="#-8">ビルダーを使うとサブクラス化できるようになります</a></li>
+<li><a href="#-9">ビルダーはロールから合成することもできます</a></li>
+</ul>
+</li>
+<li><a href="#code_lazy_build_code">遅延評価と<code>lazy_build</code></a></li>
+<li><a href="#code_init_arg_code">コンストラクタのパラメータ (<code>init_arg</code>)</a></li>
+<li><a href="#-10">ウィークリファレンス</a></li>
+<li><a href="#-11">トリガ</a></li>
+<li><a href="#-12">アトリビュートの型</a></li>
+<li><a href="#-13">委譲</a></li>
+<li><a href="#-14">メタクラスとトレート</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-15">アトリビュートの継承</a></li>
+<li><a href="#-16">もっと詳しく知りたい方は</a></li>
+<li><a href="#-17">その他のオプション</a>
+<ul>
+<li>
+<ul><li><a href="#code_documentation_code"><code>documentation</code>オプション</a></li>
+<li><a href="#code_auto_deref_code"><code>auto_deref</code>オプション</a></li>
+<li><a href="#code_initializer_code"><code>initializer</code>オプション</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a href="#-18">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual::Attributes - Mooseによるオブジェクトのアトリビュート</p>
+
+</div>
+<h2 id="-2">はじめに</h2>
+<div id="CONTENT-2">
+<p>Mooseのアトリビュートには多くのプロパティがあります。アトリビュートはおそらくMooseの機能としてはずば抜けて強力で柔軟なものですし、アトリビュートを宣言するだけで強力なクラスを作れます。実際、アトリビュートの宣言しかないクラスを作ることもできます。</p>
+<p>アトリビュートは、あるクラスに属するすべてのメンバーが持つプロパティです。たとえば、「<code>Person</code>オブジェクトにはかならず姓と名がある」といえます。また、アトリビュートは省略可能にすることもできるので、「<code>Person</code>オブジェクトの中には社会保障番号を持つものもある（持たないものもある）」ということもできます。</p>
+<p>もっとも単純な例では、アトリビュートは（ハッシュのように）読み書き可能な名前付きの値とも考えられます。ただし、アトリビュートの場合はデフォルト値や型制約があったり、委譲などを行うこともできます。</p>
+<p>アトリビュートは、ほかの言語ではスロットやプロパティと呼ばれることもあります。</p>
+
+</div>
+<h2 id="-3">アトリビュートのオプション</h2>
+<div id="CONTENT-3">
+<p>アトリビュートを宣言するときには<code>has</code>関数を使います。</p>
+<pre>  package Person;
+
+  use Moose;
+
+  has 'first_name' =&gt; ( is =&gt; 'rw' );
+
+</pre>
+<p>これは、<code>Person</code>オブジェクトはすべて省略可能で読み書きもできる「first_name」というアトリビュートを持つ、ということです。</p>
+
+</div>
+<h3 id="-4">読み書き可能と読み取り専用</h3>
+<div id="CONTENT-4">
+<p>アトリビュートのプロパティは<code>has</code>に渡したオプションによって定義されます。オプションにはさまざまなものがありますが、もっともシンプルな例では、設定する必要があるのは<code>is</code>だけです。これは<code>rw</code> (read-write)または<code>ro</code> (read-only)の値を取ります。</p>
+<p>(実際には<code>is</code>すら省略できますが、そうすると生成されたアトリビュートにはアクセサがなくなりますから、なにかディープな黒魔術をしようというのでなければ役に立ちません)</p>
+
+</div>
+<h3 id="-5">アクセサメソッド</h3>
+<div id="CONTENT-5">
+<p>オブジェクトのアトリビュートにはそれぞれひとつ以上のアクセサメソッドがあります。アクセサというのはそのアトリビュートの値を読み書きするためのものです。</p>
+<p>デフォルトではアクセサメソッドはアトリビュートと同じ名前になります。アトリビュートが<code>ro</code>であると宣言した場合はアクセサも読み取り専用になり、読み書き用と宣言した場合は読み書き用のアクセサが得られます。簡単ですね。</p>
+<p>先ほどの<code>Person</code>の例でいうと、これで私たちは<code>Person</code>オブジェクトの<code>first_name</code>アトリビュートの値を読み書きできる<code>first_name</code>アクセサをひとつ用意できた、ということになります。</p>
+<p>お望みであれば、アトリビュートの値を読み書きするのに使うメソッド名を明示的に指定することもできます。これは特にアトリビュートの読み取りはパブリックにしたいけれど書き込みはプライベートにしたい場合に便利です。一例をあげましょう。</p>
+<pre>  has 'weight' =&gt; (
+      is     =&gt; 'ro',
+      writer =&gt; '_set_weight',
+  );
+
+</pre>
+<p>weightがほかのメソッドに基づいて計算される場合はこうしておいた方が便利かもしれません。<code>eat</code>メソッドが呼ばれるたびにweightを修正するようなことがあるかもしれないからです。こうしておけば、weightの値を変更する実装の詳細は隠したまま、クラスを使う人にweightの値を提供できるようになります。</p>
+<p>また、読み取り用のメソッド名と書き込み用のメソッド名は区別したいという人もいるかもしれません。ダミアン・コンウェイは<i>Perl Best Practices</i>の中で読み取り用のメソッドは「get_」で、書き込み用のメソッドは「set_」で始めることを推奨しています。</p>
+<p>これは<code>reader</code>メソッドと<code>writer</code>メソッドの双方にメソッド名を指定すればまさにその通りのことができます。</p>
+<pre>  has 'weight' =&gt; (
+      is     =&gt; 'rw',
+      reader =&gt; 'get_weight',
+      writer =&gt; 'set_weight',
+  );
+
+</pre>
+<p>こんなことを何度も繰り返すのは頭がおかしくなるほど退屈な作業だと思った方、正解です!　ありがたいことに、Mooseには強力な拡張システムがありますから、デフォルトの命名規則をオーバーライドすることもできます。詳しくは<cite>Moose::Manual::MooseX</cite>をご覧ください。</p>
+
+</div>
+<h3 id="predicate_clearer">断定用のメソッド(predicate)とクリア用のメソッド(clearer)</h3>
+<div id="predicate_clearer_CONTENT">
+<p>Mooseを使うと、偽または未定義値が入っているアトリビュートと、値がセットされていないアトリビュートとを明示的に区別できます。この情報を利用するにはアトリビュートにクリア用のメソッドと断定用のメソッドを定義する必要があります。</p>
+<p>断定用のメソッドはあるアトリビュートにいま値がセットされているかどうかを返すものです。なお、アトリビュートに明示的に<code>undef</code>、またはほかの偽値をセットした場合でも断定用のメソッドは真値を返しますのでご注意ください。</p>
+<p>クリア用のメソッドはアトリビュートの値をセットされていない状態にするものです。これは<code>undef</code>値をセットするのと同じ「ではありません」。ただし、これを区別できるのは断定用のメソッドを定義したときのみです!</p>
+<p>ここでアクセサと断定用のメソッド、クリア用のメソッドの関係を示すコードを見てみましょう。</p>
+<pre>  package Person;
+
+  use Moose;
+
+  has 'ssn' =&gt; (
+      is        =&gt; 'rw',
+      clearer   =&gt; 'clear_ssn',
+      predicate =&gt; 'has_ssn',
+  );
+
+  ...
+
+  my $person = Person-&gt;new();
+  $person-&gt;has_ssn; # false
+
+  $person-&gt;ssn(undef);
+  $person-&gt;ssn; # returns undef
+  $person-&gt;has_ssn; # true
+
+  $person-&gt;clear_ssn;
+  $person-&gt;ssn; # returns undef
+  $person-&gt;has_ssn; # false
+
+  $person-&gt;ssn('123-45-6789');
+  $person-&gt;ssn; # returns '123-45-6789'
+  $person-&gt;has_ssn; # true
+
+  my $person2 = Person-&gt;new( ssn =&gt; '111-22-3333');
+  $person2-&gt;has_ssn; # true
+
+</pre>
+<p>デフォルトでは、Mooseは断定用のメソッドやクリア用のメソッドは用意してくれません。自分で明示的にメソッド名を指定する必要があります。</p>
+
+</div>
+<h3 id="-6">必須かどうか</h3>
+<div id="CONTENT-6">
+<p>デフォルトでは、アトリビュートはすべて省略可能です。また、オブジェクトの生成時に用意されている必要もありません。アトリビュートを必須にしたければ<code>required</code>オプションを真にするだけで結構です。</p>
+<pre>  has 'name' =&gt; (
+      is       =&gt; 'ro',
+      required =&gt; 1,
+  );
+
+</pre>
+<p>ただし、この「required」が実際に何を意味しているかについては何点か注意しておいた方がよいでしょう。</p>
+<p>基本的に、requiredの意味は、このアトリビュート(<code>name</code>)はコンストラクタに渡す必要がある、ということだけです。値については何も指定していませんから、<code>undef</code>ということもありえます。</p>
+<p>また、たとえ必須アトリビュートであってもクリア用のメソッドが定義されていれば値をクリアすることはできるので、オブジェクト生成後は値がセットされていない、ということもありえます。</p>
+<p>つまり、本当にアトリビュートを必須にしたいのであれば、クリア用のメソッドを定義するのはあまり意味がありません。ただし、場合によっては必須アトリビュートに「プライベートの」<code>clearer</code>や<code>predicate</code>を用意しておくのは便利なこともあります。</p>
+
+</div>
+<h3 id="-7">デフォルト値とビルダーメソッド</h3>
+<div id="CONTENT-7">
+<p>アトリビュートにはデフォルト値を持たせることもできます。Mooseでデフォルト値を指定するには2通りの方法があります。</p>
+<p>もっとも簡単なのは、<code>default</code>オプションに単にリファレンスではないスカラ値を渡す方法です。</p>
+<pre>  has 'size' =&gt; (
+      is        =&gt; 'ro',
+      default   =&gt; 'medium',
+      predicate =&gt; 'has_size',
+  );
+
+</pre>
+<p>コンストラクタにsizeアトリビュートが渡されなかった場合、その値は<code>medium</code>になります。</p>
+<pre>  my $person = Person-&gt;new();
+  $person-&gt;size; # medium
+  $person-&gt;has_size; # true
+
+</pre>
+<p>また、<code>default</code>にサブルーチンのリファレンスを渡すこともできます。このリファレンスはオブジェクトのメソッドという形で呼ばれます。</p>
+<pre>  has 'size' =&gt; (
+      is =&gt; 'ro',
+      default =&gt;
+          sub { ( 'small', 'medium', 'large' )[ int( rand 3 ) ] },
+      predicate =&gt; 'has_size',
+  );
+
+</pre>
+<p>くだらない例ですが、新しいオブジェクトを生成するたびにこのサブルーチンが呼ばれるというポイントはおわかりでしょうか。</p>
+<p><code>default</code>のサブルーチンリファレンスを渡した場合は、追加のパラメータなしのオブジェクトメソッドとして呼ばれます。</p>
+<pre>  has 'size' =&gt; (
+      is =&gt; 'ro',
+      default =&gt; sub {
+          my $self = shift;
+
+          return $self-&gt;height &gt; 200 ? 'big' : 'average';
+      },
+  );
+
+</pre>
+<p>オブジェクト生成時に<code>default</code>が呼ばれても、ほかのアトリビュートにはまだ値がセットされていないこともあります。アトリビュートのデフォルト値がそのオブジェクトのほかの状態に依存している場合は、そのアトリビュートを<code>lazy</code>にできます。遅延評価については次のセクションで扱います。</p>
+<p>デフォルト値に何らかのリファレンスを渡したい場合は、サブルーチンの返り値として渡す必要があります。そうしないと、Perlはそのリファレンスを1回だけインスタンス化したあと、それをすべてのオブジェクトで使い回してしまうためです。</p>
+<pre>  has 'mapping' =&gt; (
+      is      =&gt; 'ro',
+      default =&gt; {}, # wrong!
+  );
+
+</pre>
+<p>Mooseはデフォルト値にサブルーチンリファレンス以外の裸のリファレンスを渡した場合はエラーが発生します。</p>
+<p>これは、裸のリファレンスを渡せるようにしてしまうと、デフォルトでマッピングされるアトリビュートが多くのオブジェクトで共有されてしまうことになりがちだからです。だから、裸のリファレンスを渡すのではなく、サブルーチンリファレンスでくるんでください。</p>
+<pre>  has 'mapping' =&gt; (
+      is      =&gt; 'ro',
+      default =&gt; sub { {} }, # right!
+  );
+
+</pre>
+<p>ちょっとわかりづらいですが、これがPerlのやり方なのです。</p>
+<p>また、サブルーチンリファレンスを使うかわりに、アトリビュートに<code>builder</code>メソッドを定義する方法もあります。</p>
+<pre>  has 'size' =&gt; (
+      is        =&gt; 'ro',
+      builder   =&gt; '_build_size',
+      predicate =&gt; 'has_size',
+  );
+
+  sub _build_size {
+      return ( 'small', 'medium', 'large' )[ int( rand 3 ) ];
+  }
+
+</pre>
+<p>こちらにはいくつか利点があります。まず、コードのかたまりを独自の名前を持つメソッドに移せますから、読みやすくなりますし、コードもすっきりします。</p>
+<p>だから、ごく単純なデフォルト値を渡すとき以外は、<code>default</code>のかわりに<code>builder</code>を使うことを強くおすすめします。</p>
+<p><code>builder</code>も、<code>default</code>と同じく追加のパラメータなしのオブジェクトメソッドとして呼ばれます。</p>
+
+</div>
+<h4 id="-8">ビルダーを使うとサブクラス化できるようになります</h4>
+<div id="CONTENT-8">
+<p><code>builder</code>は「名前で」呼ばれますから、Perlがメソッド解決を行います。つまり、builderメソッドは継承もオーバーライドもできるということです。</p>
+<p><code>Person</code>クラスをサブクラス化する場合、<code>_build_size</code>もオーバーライドできます。</p>
+<pre>  package Lilliputian;
+
+  use Moose;
+  extends 'Person';
+
+  sub _build_size { return 'small' }
+
+</pre>
+
+</div>
+<h4 id="-9">ビルダーはロールから合成することもできます</h4>
+<div id="CONTENT-9">
+<p>builderは名前で呼ばれますから、ロールとも共存できます。たとえば、ロールの方でアトリビュートを提供して、<code>builder</code>は取り込む側のクラスに要求するということも可能です。</p>
+<pre>  package HasSize;
+  use Moose::Role;
+
+  requires '_build_size';
+
+  has 'size' =&gt; (
+      is      =&gt; 'ro',
+      lazy    =&gt; 1,
+      builder =&gt; '_build_size',
+  );
+
+  package Lilliputian;
+  use Moose;
+
+  with 'HasSize';
+
+  sub _build_size { return 'small' }
+
+</pre>
+<p>ロールについては<cite>Moose::Manual::Roles</cite>をご覧ください。</p>
+
+</div>
+<h3 id="code_lazy_build_code">遅延評価と<code>lazy_build</code></h3>
+<div id="code_lazy_build_code_CONTENT">
+<p>アトリビュートを<code>lazy</code>にすると、アトリビュートの初期化を遅らせることができます。</p>
+<pre>  has 'size' =&gt; (
+      is      =&gt; 'ro',
+      lazy    =&gt; 1,
+      builder =&gt; '_build_size',
+  );
+
+</pre>
+<p><code>lazy</code>が真の場合、デフォルト値が生成されるのはオブジェクト生成時ではなく、はじめて読み取り用のメソッドが呼ばれたときになります。遅延評価した方がよい場合はいくつかあります。</p>
+<p>まず、アトリビュートのデフォルト値がほかのアトリビュートに依存している場合です。この場合、アトリビュートは「かならず」<code>lazy</code>にしなければなりません。オブジェクト生成時にはデフォルト値が予想通りの順便で生成されるとは限らないので、デフォルト生成時にほかのアトリビュートが初期化されていることを期待するわけにはいかないのです。</p>
+<p>次に、必要になるまではデフォルトを生成する理由がない場合も多々あります。アトリビュートを<code>lazy</code>にしておけば、必要になるまでアトリビュートの生成コストはかかりません。そのアトリビュートが「一度も」必要とされなかった場合は、CPU時間をいくらか節約できます。</p>
+<p>だから、当然ながらビルダーを使っていたり、デフォルト値が単純とはいえないアトリビュートについてはかならず<code>lazy</code>にすることをおすすめします。</p>
+<p>設定を簡単にしたい場合は単に<code>lazy_build</code>というアトリビュートオプションを指定するだけでも結構です。こうするといくつかのオプションをまとめてくれます。</p>
+<pre>  has 'size' =&gt; (
+      is         =&gt; 'ro',
+      lazy_build =&gt; 1,
+  );
+
+</pre>
+<p>これは、以下のすべてのオプションを指定するのと同じ働きをします。</p>
+<pre>  has 'size' =&gt; (
+      is        =&gt; 'ro',
+      lazy      =&gt; 1,
+      builder   =&gt; '_build_size',
+      clearer   =&gt; 'clear_size',
+      predicate =&gt; 'has_size',
+  );
+
+</pre>
+<p>アトリビュート名がアンダースコア(<code>_</code>)で始まる場合、クリア用のメソッドと断定用のメソッドもアンダースコアで始まります。</p>
+<pre>  has '_size' =&gt; (
+      is         =&gt; 'ro',
+      lazy_build =&gt; 1,
+  );
+
+</pre>
+<p>上の例は、このようになります。</p>
+<pre>  has '_size' =&gt; (
+      is        =&gt; 'ro',
+      lazy      =&gt; 1,
+      builder   =&gt; '_build__size',
+      clearer   =&gt; '_clear_size',
+      predicate =&gt; '_has_size',
+  );
+
+</pre>
+<p>ビルダー名もアンダースコアが2つになっていることに注意してください。内部的には単にアトリビュート名の前に「_build_」をつけているだけです。</p>
+<p><code>lazy_build</code>が生成する名前が気に入らない場合は、いつでも自分で名前を指定できます。</p>
+<pre>  has 'size' =&gt; (
+      is         =&gt; 'ro',
+      lazy_build =&gt; 1,
+      clearer    =&gt; '_clear_size',
+  );
+
+</pre>
+<p>自分で明示的に指定したオプションはかならずMoose内部のデフォルトより優先されます。</p>
+
+</div>
+<h3 id="code_init_arg_code">コンストラクタのパラメータ (<code>init_arg</code>)</h3>
+<div id="code_init_arg_code_CONTENT">
+<p>アトリビュートは、デフォルトではアトリビュート名をキーにしてクラスのコンストラクタに値を渡せるようになっていますが、場合によってはコンストラクタのパラメータとしては別の名前を使いたいとか、コンストラクタ経由ではアトリビュートに値をセットできないようにしたいこともあるかもしれません。</p>
+<p>いずれの場合でも、これは<code>init_arg</code>オプションを利用すれば実現できます。</p>
+<pre>  has 'bigness' =&gt; (
+      is       =&gt; 'ro',
+      init_arg =&gt; 'size',
+  );
+
+</pre>
+<p>これで「bigness」という名前がついているものの、コンストラクタに渡すときには<code>size</code>という名前を使うアトリビュートができます。</p>
+<p>もっと役に立つ例としては、コンストラクタ経由ではアトリビュートに値をセットできないようにできます。これはプライベートなアトリビュートの場合、特に便利です。</p>
+<pre>  has '_genetic_code' =&gt; (
+      is         =&gt; 'ro',
+      lazy_build =&gt; 1,
+      init_arg   =&gt; undef,
+  );
+
+</pre>
+<p><code>init_arg</code>を<code>undef</code>にすると、新しいオブジェクトを生成するときにこのアトリビュートに値をセットすることはできなくなります。</p>
+
+</div>
+<h3 id="-10">ウィークリファレンス</h3>
+<div id="CONTENT-10">
+<p>Mooseにはウィークリファレンスのサポートが組み込まれています。<code>weak_ref</code>オプションを真値にすると、アトリビュートに値が書き込まれたときはかならず<code>Scalar::Util::weaken</code>を呼ぶようになります。</p>
+<pre>  has 'parent' =&gt; (
+      is       =&gt; 'rw',
+      weak_ref =&gt; 1,
+  );
+
+  $node-&gt;parent($parent_node);
+
+</pre>
+<p>これは循環参照になるかもしれないオブジェクトを作るときには非常に便利です。</p>
+
+</div>
+<h3 id="-11">トリガ</h3>
+<div id="CONTENT-11">
+<p><code>trigger</code>はアトリビュートに値がセットされたときにかならず呼ばれるサブルーチンです。</p>
+<pre>  has 'size' =&gt; (
+      is      =&gt; 'rw',
+      trigger =&gt; \&amp;_size_set,
+  );
+
+  sub _size_set {
+      my ( $self, $size ) = @_;
+
+      warn $self-&gt;name, &quot; size is now $size\n&quot;;
+  }
+
+</pre>
+<p>トリガはメソッドとして呼ばれ、新しい値を引数として受け取ります。トリガは値がセットされた「あと」で呼ばれます。</p>
+<p>これは、afterというメソッドモディファイアとは2つの点で異なります。まず、トリガの方は、アクセサメソッドが呼ばれたときかならず（読み込んだときも書き込んだときも）呼ばれるのではなく、アトリビュートに値がセットされたときだけ呼ばれます。また、アトリビュートの値がコンストラクタに渡されたときにも呼ばれます。</p>
+<p>ただし、トリガは<code>default</code>や<code>builder</code>で値が初期化されたときには呼ばれ「ません」。</p>
+
+</div>
+<h3 id="-12">アトリビュートの型</h3>
+<div id="CONTENT-12">
+<p>アトリビュートは特定の型しか受け入れないように制限できます。</p>
+<pre>  has 'first_name' =&gt; (
+      is  =&gt; 'ro',
+      isa =&gt; 'Str',
+  );
+
+</pre>
+<p>こうすると、<code>first_name</code>アトリビュートはかならず文字列でなければならなくなります。</p>
+<p>また、アトリビュートが特定のロールを持つオブジェクトだけを受け入れるように指定するショートカットもあります。</p>
+<pre>  has 'weapon' =&gt; (
+      is   =&gt; 'rw',
+      does =&gt; 'MyApp::Weapon',
+  );
+
+</pre>
+<p>型システムについての詳細は<cite>Moose::Manual::Types</cite>のドキュメントをご覧ください。</p>
+
+</div>
+<h3 id="-13">委譲</h3>
+<div id="CONTENT-13">
+<p>アトリビュートの値に処理を委譲するだけのメソッドを定義することもできます。</p>
+<pre>  has 'hair_color' =&gt; (
+      is      =&gt; 'ro',
+      isa     =&gt; 'Graphics::Color::RGB',
+      handles =&gt; { hair_color_hex =&gt; 'as_hex_string' },
+  );
+
+</pre>
+<p>こうすると、オブジェクトに<code>hair_color_hex</code>という新しいメソッドが追加されるのですが、<code>hair_color_hex</code>を呼んでも、内部的にはただ<code>$self-&gt;hair_color-&gt;as_hex_string</code>を呼び出すだけです。</p>
+<p>委譲メソッドの設定の仕方については<cite>Moose::Manual::Delegation</cite>をご覧ください。</p>
+
+</div>
+<h3 id="-14">メタクラスとトレート</h3>
+<div id="CONTENT-14">
+<p>Mooseでもっとも便利な機能のひとつに、独自のメタクラスやメタクラスのトレートを使えばあらゆる点で拡張できることがあげられます。</p>
+<p>アトリビュートを宣言するときも、アトリビュートのメタクラスやトレートを宣言できます。</p>
+<pre>  use MooseX::AttributeHelpers;
+
+  has 'mapping' =&gt; (
+      metaclass =&gt; 'Collection::Hash',
+      is        =&gt; 'ro',
+      default   =&gt; sub { {} },
+  );
+
+</pre>
+<p>この例でいうと、<code>Collection::Hash</code>というメタクラスは、実際には<cite>MooseX::AttributeHelpers::Collection::Hash</cite>を指します。</p>
+<p>アトリビュートにはひとつないし複数のトレートを組み込むこともできます。</p>
+<pre>  use MooseX::MetaDescription;
+
+  has 'size' =&gt; (
+      is          =&gt; 'ro',
+      traits      =&gt; ['MooseX::MetaDescription::Meta::Trait'],
+      description =&gt; {
+          html_widget  =&gt; 'text_input',
+          serialize_as =&gt; 'element',
+      },
+  );
+
+</pre>
+<p>トレートの利点は、複数のトレートを簡単に組み合わせられることです（トレートは、実はロールに皮をかぶせたものなのです）。</p>
+<p>CPANにはアトリビュートに便利なメタクラスやトレートを提供するMooseXモジュールがいくつもあります（<cite>Moose::Manual::MooseX</cite>にいくつか例が紹介されています）。また、自前のメタクラスやトレートを書くこともできます。例については<cite>Moose::Cookbook</cite>の「メタMoose」および「Mooseを拡張する」以下に記載されているレシピをご覧ください。</p>
+
+</div>
+<h2 id="-15">アトリビュートの継承</h2>
+<div id="CONTENT-15">
+<p>デフォルトでは、子クラスは親（祖先）クラスのすべてのアトリビュートをそのまま継承します。ただし、子クラスの中で継承したアトリビュートの一部の特徴を明示的に変更することもできます。</p>
+<p>サブクラスでオーバーライドできるオプションは次の通りです。</p>
+<dl>
+	<dt>* default</dt>
+	<dt>* coerce</dt>
+	<dt>* required</dt>
+	<dt>* documentation</dt>
+	<dt>* lazy</dt>
+	<dt>* isa</dt>
+	<dt>* handles</dt>
+	<dt>* builder</dt>
+	<dt>* metaclass</dt>
+	<dt>* traits</dt>
+</dl>
+<p>アトリビュートをオーバーライドするのは、アトリビュート名の前にプラス記号(<code>+</code>)をつけるだけでできます。</p>
+<pre>  package LazyPerson;
+
+  use Moose;
+
+  extends 'Person';
+
+  has '+first_name' =&gt; (
+      lazy    =&gt; 1,
+      default =&gt; 'Bill',
+  );
+
+</pre>
+<p>これで<code>LazyPerson</code>の<code>first_name</code>アトリビュートは遅延評価をするようになり、デフォルト値は<code>'Bill'</code>になります。</p>
+<p>継承したアトリビュートの型(<code>isa</code>)を変える場合は慎重にすることをおすすめします。</p>
+
+</div>
+<h2 id="-16">もっと詳しく知りたい方は</h2>
+<div id="CONTENT-16">
+<p>Mooseのアトリビュートは複雑なテーマです。このドキュメントではそのいくつかの側面をさらっと紹介したにすぎません。さらに理解を深めたい方は、<cite>Moose::Manual::Delegation</cite>と<cite>Moose::Manual::Types</cite>のドキュメントを読むことをおすすめします。</p>
+
+</div>
+<h2 id="-17">その他のオプション</h2>
+<div id="CONTENT-17">
+<p>Mooseのアトリビュートには多くのオプションがあります。ここで紹介するものはよりモダンな機能で置き換えられてしまいましたが、完璧を期すために取り上げました。</p>
+
+</div>
+<h3 id="code_documentation_code"><code>documentation</code>オプション</h3>
+<div id="code_documentation_code_CONTENT">
+<p>アトリビュートのドキュメントとなる文字列を指定できます。</p>
+<pre>  has 'first_name' =&gt; (
+      is            =&gt; 'rw',
+      documentation =&gt; q{The person's first (personal) name},
+  );
+
+</pre>
+<p>Mooseがこの情報を利用することはいっさいありません。保存しておくだけです。</p>
+
+</div>
+<h3 id="code_auto_deref_code"><code>auto_deref</code>オプション</h3>
+<div id="code_auto_deref_code_CONTENT">
+<p>アトリビュートが配列リファレンスまたはハッシュリファレンスの場合、<code>auto_deref</code>オプションが有効になっていると、読み取り用のメソッドから値を返すときにデリファレンスするようになります。</p>
+<pre>  my %map = $object-&gt;mapping;
+
+</pre>
+<p>このオプションが有効なのはアトリビュートが明示的に<code>ArrayRef</code>または<code>HashRef</code>に型付けされている場合のみです。</p>
+<p>ただし、そのようなアトリビュートには、さらにアトリビュートのアクセスや操作の幅が広がる<cite>MooseX::AttributeHelpers</cite>を利用することをおすすめします。</p>
+
+</div>
+<h3 id="code_initializer_code"><code>initializer</code>オプション</h3>
+<div id="code_initializer_code_CONTENT">
+<p>Mooseには<code>initializer</code>というアトリビュートオプションがあります。これは<code>builder</code>と同じようなものですが、呼ばれるのはオブジェクト生成時「のみ」というところが異なります。</p>
+<p>このオプションは<cite>Class::MOP</cite>から継承しているのですが、(Moose専用の) <code>builder</code>を使うことをおすすめします。</p>
+
+</div>
+<h2 id="-18">作者</h2>
+<div id="CONTENT-18">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

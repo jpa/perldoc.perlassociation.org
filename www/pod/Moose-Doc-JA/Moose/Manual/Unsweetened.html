@@ -1,0 +1,344 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual::Unsweetened Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual::Unsweetened</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">本文</a></li>
+<li><a href="#-3">クラスとアトリビュート</a></li>
+<li><a href="#-4">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual::Unsweetened - Mooseのイディオムをシュガー関数を使わずに従来のPerl 5で書いてみる</p>
+
+</div>
+<h2 id="-2">本文</h2>
+<div id="CONTENT-2">
+<p>いったいMooseはどんなことをしているのか、どうして時間の節約になるのか。そのようなことを知りたいのであれば、Mooseが「実際に」どのようなことをしてくれているのかを調べてみるとよいかもしれません。ここではMooseのシュガー関数を昔風のプレーンなPerl 5に書き直したものをご覧にいれます。</p>
+
+</div>
+<h2 id="-3">クラスとアトリビュート</h2>
+<div id="CONTENT-3">
+<p>まずはごく小さなクラスを2つ、Moose風に定義してみましょう。</p>
+<pre>  package Person;
+
+  use DateTime;
+  use DateTime::Format::Natural;
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  has name =&gt; (
+      is       =&gt; 'rw',
+      isa      =&gt; 'Str',
+      required =&gt; 1,
+  );
+
+  # Moose doesn't know about non-Moose-based classes.
+  class_type 'DateTime';
+
+  my $en_parser = DateTime::Format::Natural-&gt;new(
+      lang      =&gt; 'en',
+      time_zone =&gt; 'UTC',
+  );
+
+  coerce 'DateTime'
+      =&gt; from 'Str'
+      =&gt; via { $en_parser-&gt;parse_datetime($_) };
+
+  has birth_date =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'DateTime',
+      coerce  =&gt; 1,
+      handles =&gt; { birth_year =&gt; 'year' },
+  );
+
+  subtype 'ShirtSize'
+      =&gt; as 'Str'
+      =&gt; where { /^(?:s|m|l|xl|xxl)$/i }
+      =&gt; message { &quot;$_ is not a valid shirt size (s, m, l, xl, xxl)&quot; };
+
+  has shirt_size =&gt; (
+      is      =&gt; 'rw',
+      isa     =&gt; 'ShirtSize',
+      default =&gt; 'l',
+  );
+
+</pre>
+<p>Mooseのクラスとしてはかなりシンプルなものです。アトリビュートは3つしかありません。ただ、Tシャツのサイズを検証するための型をひとつ定義してあります。Tシャツのサイズが「青」なんてことにはしたくないですからね！</p>
+<pre>  package User;
+
+  use Email::Valid;
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  extends 'Person';
+
+  subtype 'Email'
+      =&gt; as 'Str'
+      =&gt; where { Email::Valid-&gt;address($_) }
+      =&gt; message { &quot;$_ is not a valid email address&quot; };
+
+  has email_address =&gt; (
+      is       =&gt; 'rw',
+      isa      =&gt; 'Email',
+      required =&gt; 1,
+  );
+
+</pre>
+<p>こちらはPersonクラスを継承して、メールアドレスというアトリビュートをひとつ追加しています。</p>
+<p>それでは、この2つのクラスを昔風のプレーンなPerl 5で書くとどうなるか、見ていきましょう。話の都合上、ここではほかのベースクラスや<code>Class::Accessor</code>のようなヘルパーはいっさい利用しないことにします。</p>
+<pre>  package Person;
+
+  use strict;
+  use warnings;
+
+  use Carp qw( confess );
+  use DateTime;
+  use DateTime::Format::Natural;
+
+  sub new {
+      my $class = shift;
+      my %p = ref $_[0] ? %{ $_[0] } : @_;
+
+      exists $p{name}
+          or confess 'name is a required attribute';
+      $class-&gt;_validate_name( $p{name} );
+
+      exists $p{birth_date}
+          or confess 'birth_date is a required attribute';
+
+      $p{birth_date} = $class-&gt;_coerce_birth_date( $p{birth_date} );
+      $class-&gt;_validate_birth_date( $p{birth_date} );
+
+      $p{shirt_size} = 'l'
+          unless exists $p{shirt_size}:
+
+      $class-&gt;_validate_shirt_size( $p{shirt_size} );
+
+      return bless \%p, $class;
+  }
+
+  sub _validate_name {
+      shift;
+      my $name = shift;
+
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+
+      defined $name
+          or confess 'name must be a string';
+  }
+
+  {
+      my $en_parser = DateTime::Format::Natural-&gt;new(
+          lang      =&gt; 'en',
+          time_zone =&gt; 'UTC',
+      );
+
+      sub _coerce_birth_date {
+          shift;
+          my $date = shift;
+
+          return $date unless defined $date &amp;&amp; ! ref $date;
+
+          my $dt = $en_parser-&gt;parse_datetime($date);
+
+          return $dt ? $dt : undef;
+      }
+  }
+
+  sub _validate_birth_date {
+      shift;
+      my $birth_date = shift;
+
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+
+      $birth_date-&gt;isa('DateTime')
+          or confess 'birth_date must be a DateTime object';
+  }
+
+  sub _validate_shirt_size {
+      shift;
+      my $shirt_size = shift;
+
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+
+      defined $shirt_size
+          or confess 'shirt_size cannot be undef';
+
+      $shirt_size =~ /^(?:s|m|l|xl|xxl)$/
+          or confess &quot;$shirt_size is not a valid shirt size (s, m, l, xl, xxl)&quot;;
+  }
+
+  sub name {
+      my $self = shift;
+
+      if (@_) {
+          $self-&gt;_validate_name( $_[0] );
+          $self-&gt;{name} = $_[0];
+      }
+
+      return $self-&gt;{name};
+  }
+
+  sub birth_date {
+      my $self = shift;
+
+      if (@_) {
+          my $date = $self-&gt;_coerce_birth_date( $_[0] );
+          $self-&gt;_validate_birth_date( $date );
+
+          $self-&gt;{birth_date} = $date;
+      }
+
+      return $self-&gt;{birth_date};
+  }
+
+  sub birth_year {
+      my $self = shift;
+
+      return $self-&gt;birth_date-&gt;year;
+  }
+
+  sub shirt_size {
+      my $self = shift;
+
+      if (@_) {
+          $self-&gt;_validate_shirt_size( $_[0] );
+          $self-&gt;{shirt_size} = $_[0];
+      }
+
+      return $self-&gt;{shirt_size};
+  }
+
+</pre>
+<p>いやはや長かったですね！　ここで注意しておきたいのは、データを検証するコードがいかに場所を取るかということ。だからこそPerl 5のプログラマは検証用のコードを書くのをサボりがちなのですが、困ったことに、引数の検証をしないと、あとで驚くことになるのがオチなのですよね（「どうしてbirth_dateにメールアドレスが入ってるんだ？」って）。</p>
+<p>あと、（わざと残しておいた）バグに気がつきましたか？</p>
+<p><code>_validate_birth_date()</code>メソッドを見てください。<code>isa()</code>を呼ぶ前に、<code>$birth_date</code>の値が実際に定義されているか、オブジェクトであるかを確認した方がよいはずです！　このチェックをしないと、データ検証用のコードがプログラムを殺してしまうことになりかねません。それではいけませんよね。</p>
+<p>Personクラスにスーパークラスを追加した場合はコンストラクタもそれにあわせて変更する必要が出てくることにも注意しましょう。</p>
+<p>（ついでに書いておきますと、ここでMooseがしてくれている細々としたことをすべてきっちり理解するのは決して楽なことではありません。そして、この例のポイントはまさにそこにあります。Mooseを使えば、そういった多くの作業から解放されるのです！）</p>
+<p>さて、今度はUserクラスを見ていきます:</p>
+<pre>  package User;
+
+  use strict;
+  use warnings;
+
+  use Carp qw( confess );
+  use Email::Valid;
+  use Scalar::Util qw( blessed );
+
+  use base 'Person';
+
+  sub new {
+      my $class = shift;
+      my %p = ref $_[0] ? %{ $_[0] } : @_;
+
+      exists $p{email_address}
+          or confess 'email_address is a required attribute';
+      $class-&gt;_validate_email_address( $p{email_address} );
+
+      my $self = $class-&gt;SUPER::new(%p);
+
+      $self-&gt;{email_address} = $p{email_address};
+
+      return $self;
+  }
+
+  sub _validate_email_address {
+      shift;
+      my $email_address = shift;
+
+      local $Carp::CarpLevel = $Carp::CarpLevel + 1;
+
+      defined $email_address
+          or confess 'email_address must be a string';
+
+      Email::Valid-&gt;address($email_address)
+          or confess &quot;$email_address is not a valid email address&quot;;
+  }
+
+  sub email_address {
+      my $self = shift;
+
+      if (@_) {
+          $self-&gt;_validate_email_address( $_[0] );
+          $self-&gt;{email_address} = $_[0];
+      }
+
+      return $self-&gt;{email_address};
+  }
+
+</pre>
+<p>こちらは短めでした。もっとも、アトリビュートの方もひとつしかないわけですが。</p>
+<p>この2つのクラスには、あまり役に立っていないコードがたくさんありますから、たぶんこのような感じで「アトリビュートと検証」用のハッシュでも定義してやればシンプルに書けそうです。</p>
+<pre>  package Person;
+
+  my %Attr = (
+      name =&gt; {
+          required =&gt; 1,
+          validate =&gt; sub { defined $_ },
+      },
+      birth_date =&gt; {
+          required =&gt; 1,
+          validate =&gt; sub { blessed $_ &amp;&amp; $_-&gt;isa('DateTime') },
+      },
+      shirt_size =&gt; {
+          required =&gt; 1,
+          validate =&gt; sub { defined $_ &amp;&amp; $_ =~ /^(?:s|m|l|xl|xxl)$/i },
+      }
+  );
+
+</pre>
+<p>また、そのような定義を受け入れて適切なことをしてくれるベースクラスも定義できそうですが、そのようなことを続けていくと、いつの間にかできそこないのMooseもどきを書いていた、ということになるわけです！</p>
+<p>もちろん<code>Class::Accessor</code>や<code>Class::Meta</code>のように、Mooseがしてくれることを部分的に実現してくれるCPANモジュールはあります。ただ、Mooseのすべての機能をひっくるめてDSL的なシュガーをふりかけてくれるものはありませんし、Mooseと同じだけの拡張性を持つように設計されているものもありません。Mooseの場合、MooseXモジュールを書けば、もともと組み込まれている機能を置き換えたり拡張したりすることが簡単にできます。</p>
+<p>Mooseは、単体でも完全なオブジェクト指向パッケージですが、豊富な拡張があるエコシステムの一部でもあります。熱心なユーザコミュニティもありますし、いまも活発に維持・開発が行われています。</p>
+
+</div>
+<h2 id="-4">作者</h2>
+<div id="CONTENT-4">
+<p>Dave Rolsky &lt;autarch@urth.org&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

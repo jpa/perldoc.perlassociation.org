@@ -1,0 +1,149 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Manual::MOP Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Manual::MOP</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">はじめに</a></li>
+<li><a href="#-3">やってみよう</a></li>
+<li><a href="#-4">メタクラスオブジェクトを使う</a></li>
+<li><a href="#MOP">MOPを使ってクラスを変更する</a></li>
+<li><a href="#-5">深入りしたくなったら</a></li>
+<li><a href="#-6">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Manual::MOP - Moose（とClass::MOP）のメタAPI</p>
+
+</div>
+<h2 id="-2">はじめに</h2>
+<div id="CONTENT-2">
+<p>Mooseには<code>Class::MOP</code>を下敷きにした強力なイントロスペクションAPIがあります。MOPというのはメタオブジェクトプロトコル（Meta-Object Protocol）の略称ですが、平たく言うと、クラスやアトリビュート、メソッドなどのイントロスペクションを行うためのAPIです。</p>
+<p>実は、アトリビュートやbefore/after/aroundメソッドモディファイア、不変化といったMooseの中核となる機能の多くは<code>Class::MOP</code>が提供しているものです（ほとんどの場合、Mooseは既存の<code>Class::MOP</code>のクラスを利用したりサブクラス化して機能を追加しているのですが、中にはロールやaugmentモディファイア、型のように、完全にMoose独自の新機能もあります）。</p>
+<p>MOPに興味がある方はぜひ<code>Class::MOP</code>のことを学んでください。どのドキュメントを読めばよいかわかるようになります（探しているイントロスペクションのメソッドがMoose本体ではなく<code>Class::MOP</code>のクラスに定義されている、ということも多いのです）。</p>
+<p>MOPは単に「読み取り専用」のイントロスペクションを提供するだけではありません。アトリビュートやメソッドを追加したり、ロールを組み込んだりできるようにもしてくれます（実際、Mooseの宣言的なシュガー関数はすべてMOPのAPIに薄皮をかぶせただけのものです）。</p>
+<p>Mooseの拡張モジュールを書きたいのであれば、MOPのAPIについてもある程度学ぶ必要が出てきます。また、イントロスペクションメソッドは、ドキュメントや継承グラフを生成したり、実行時にほかのリフレクションを行ったりしたいときにも便利です。</p>
+<p>このドキュメントは、メタAPIの完全なリファレンスではありません。ここで予定しているのは、目玉となる機能の一部を取り上げて、どのように動作するのか感覚をつかんでもらうことだけです。本当に理解するには、ほかのドキュメントをたくさん読む必要があるでしょうし、もしかすると多少はMooseの内部に潜り込む必要さえあるかもしれません。</p>
+
+</div>
+<h2 id="-3">やってみよう</h2>
+<div id="CONTENT-3">
+<p>メタAPIの世界に足を踏み入れる場合、クラスのメタクラスオブジェクト（<cite>Moose::Meta::Class</cite>）から始めるのがふつうです。これはクラスないしオブジェクトの<code>meta</code>メソッドを呼ぶと利用できます。</p>
+<pre>  package User;
+
+  use Moose;
+
+  my $meta = __PACKAGE__-&gt;meta;
+
+</pre>
+<p>この<code>meta</code>メソッドは、Mooseを使うとクラスに追加されます。</p>
+<p>また、<code>Class::MOP::Class-&gt;initialize($name)</code>を使うと任意のクラスのメタクラスオブジェクトが得られます。クラスにメタメソッドがあるかどうかわからない場合はこちらの方が<code>$class-&gt;meta</code>を呼ぶより安全です。</p>
+<p><code>Class::MOP::Class-&gt;initialize</code>コンストラクタは、（Mooseなどを通じて）作成済みのメタクラスがあればそれを返し、なければ新しい<code>Class::MOP::Class</code>オブジェクトを返します。これはMooseを使っているクラスだけでなく、メタAPIのクラスや、Mooseをまったく使っていないクラスでも有効です。</p>
+
+</div>
+<h2 id="-4">メタクラスオブジェクトを使う</h2>
+<div id="CONTENT-4">
+<p>メタクラスオブジェクトを使うと、クラスのアトリビュートやメソッド、ロール、親クラスなどがわかります。たとえば、クラスのすべてのアトリビュートを見るにはこうします。</p>
+<pre>  for my $attr ( $meta-&gt;get_all_attributes ) {
+      print $attr-&gt;name, &quot;\n&quot;;
+  }
+
+</pre>
+<p><code>get_all_attributes</code>メソッドのドキュメントは<code>Class::MOP::Class</code>にあります。Mooseを使っているクラスの場合は、そのクラスと親クラスで定義されているアトリビュートの<cite>Moose::Meta::Attribute</cite>オブジェクトのリストが返ります。</p>
+<p>メソッドのリストも得られます。</p>
+<pre>  for my $method ( $meta-&gt;get_all_methods ) {
+      print $method-&gt;fully_qualified_name, &quot;\n&quot;;
+  }
+
+</pre>
+<p>今度は<cite>Moose::Meta::Method</cite>のリストを回しています。なお、これらのオブジェクトの中には、実際には<cite>Moose::Meta::Method</cite>のサブクラスが混じっていることがあります（Mooseは、ラップされたメソッドや委譲されたメソッド、コンストラクタなどには別のクラスを使うためです）。</p>
+<p>クラスの親クラスやサブクラスを見ることもできます。</p>
+<pre>  for my $class ( $meta-&gt;linearized_isa ) {
+      print &quot;$class\n&quot;;
+  }
+
+  for my $subclass ( $meta-&gt;subclasses ) {
+      print &quot;$subclass\n&quot;;
+  }
+
+</pre>
+<p>なお、これらのメソッドはいずれもメタクラスオブジェクトではなく、クラスの「名前」を返します。</p>
+
+</div>
+<h2 id="MOP">MOPを使ってクラスを変更する</h2>
+<div id="MOP_CONTENT">
+<p>メタクラスオブジェクトを使うとクラスに直接アトリビュートやメソッドを追加するといった変更を加えることができます。</p>
+<p>たとえば、クラスにメソッドを加えてみましょう。</p>
+<pre>  $meta-&gt;add_method( 'say' =&gt; sub { print @_, &quot;\n&quot; } );
+
+</pre>
+<p>アトリビュートの場合はこうなります。</p>
+<pre>  $meta-&gt;add_attribute(
+      name =&gt; 'size',
+      is   =&gt; 'rw',
+      isa  =&gt; 'Int',
+  );
+
+</pre>
+<p>これは、PerlのシンタックスやMooseのシュガーを使ってメソッドやアトリビュートを定義するのに比べてはるかに面倒に見えますが、このAPIを使うと非常に強力な拡張モジュールを作れるようになります。</p>
+<p>このマニュアルの別の場所でクラスを不変化する話をしたのを覚えている方もいるかもしれません。クラスを不変化するのはよい習慣ですが、不変化してからこれらの更新メソッドを呼ぶと例外が発生してしまいます。</p>
+<p>クラスをふたたび可変にしたい場合は単純に<code>$meta-&gt;make_mutable</code>を呼んでください。変更が済んだら<code>$meta-&gt;make_immutable</code>を呼べばまた不変化できます。</p>
+<p>ただし、このようなメタAPIがもっともよく使われているのは、Mooseの拡張モジュールの部品としてです。このような拡張モジュールは、クラスを不変化する前に実行されることを想定しているものです。</p>
+
+</div>
+<h2 id="-5">深入りしたくなったら</h2>
+<div id="CONTENT-5">
+<p>Mooseの拡張に興味があるなら、<cite>Moose::Cookbook</cite>の「メタ」や「拡張」についてのレシピはすべて読んでおくことをおすすめします。これらのレシピでは、MOPのさまざまな実例を紹介しています。</p>
+<p>自分で拡張モジュールを書きたくなったとき、いちばんよい勉強法のひとつは、ほかの似たような拡張モジュールを探して、どのように動作しているか調べることです。また、おそらくさまざまなMoose::Meta::*クラスや<code>Class::MOP</code>ディストリビューションなどのAPIドキュメントもいろいろ読む必要があるでしょう。</p>
+<p>最後になりますが、MooseのメーリングリストやIRCでは質問も歓迎しています。メーリングリストやIRC、その他のリファレンスなどの情報は<b>Moose.pmのドキュメント</b> (<b>GETTING HELP</b> in <cite>Moose</cite>)にあります。</p>
+
+</div>
+<h2 id="-6">作者</h2>
+<div id="CONTENT-6">
+<p>Dave Rolsky &lt;autarch@urth.org&gt; and Stevan Little
+&lt;stevan@iinteractive.com&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+

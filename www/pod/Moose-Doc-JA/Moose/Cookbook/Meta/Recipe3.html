@@ -1,0 +1,209 @@
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf8" />
+<title>Moose::Cookbook::Meta::Recipe3 Moose(0.79) - Japan Perl Association ドキュメント和訳プロジェクト</title>
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
+</head>
+<body>
+<h1>Moose::Cookbook::Meta::Recipe3</h1>
+<div class="pod">
+<!-- INDEX START -->
+<h3 id="TOP">Index</h3>
+
+<ul><li><a href="#">題名</a></li>
+<li><a href="#-2">概要</a></li>
+<li><a href="#-3">このレシピを読む前に</a></li>
+<li><a href="#-4">動機</a></li>
+<li><a href="#-5">トレート</a></li>
+<li><a href="#-6">コードの詳細</a></li>
+<li><a href="#-7">メタクラスをトレートにする</a></li>
+<li><a href="#-8">まとめ</a></li>
+<li><a href="#-9">作者</a></li>
+<li><a href="#COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</a>
+</li>
+</ul><hr />
+<!-- INDEX END -->
+
+<h2 id="">題名</h2>
+<div id="CONTENT">
+<p>Moose::Cookbook::Meta::Recipe3 - アトリビュートのトレートを利用したラベルの実装</p>
+
+</div>
+<h2 id="-2">概要</h2>
+<div id="CONTENT-2">
+<pre>  package MyApp::Meta::Attribute::Trait::Labeled;
+  use Moose::Role;
+
+  has label =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'Str',
+      predicate =&gt; 'has_label',
+  );
+
+  package Moose::Meta::Attribute::Custom::Trait::Labeled;
+  sub register_implementation {'MyApp::Meta::Attribute::Trait::Labeled'}
+
+  package MyApp::Website;
+  use Moose;
+
+  has url =&gt; (
+      traits =&gt; [qw/Labeled/],
+      is     =&gt; 'rw',
+      isa    =&gt; 'Str',
+      label  =&gt; &quot;The site's URL&quot;,
+  );
+
+  has name =&gt; (
+      is  =&gt; 'rw',
+      isa =&gt; 'Str',
+  );
+
+  sub dump {
+      my $self = shift;
+
+      my $dump = '';
+
+      my %attributes = %{ $self-&gt;meta-&gt;get_attribute_map };
+      for my $name ( sort keys %attributes ) {
+          my $attribute = $attributes{$name};
+
+          if (   $attribute-&gt;does('MyApp::Meta::Attribute::Trait::Labeled')
+              &amp;&amp; $attribute-&gt;has_label ) {
+              $dump .= $attribute-&gt;label;
+          }
+          else {
+              $dump .= $name;
+          }
+
+          my $reader = $attribute-&gt;get_read_method;
+          $dump .= &quot;: &quot; . $self-&gt;$reader . &quot;\n&quot;;
+      }
+
+      return $dump;
+  }
+
+  package main;
+
+  my $app = MyApp::Website-&gt;new( url =&gt; &quot;http://google.com&quot;, name =&gt; &quot;Google&quot; );
+
+</pre>
+
+</div>
+<h2 id="-3">このレシピを読む前に</h2>
+<div id="CONTENT-3">
+<p>このレシピは<cite>Moose::Cookbook::Meta::Recipe2</cite>のバリエーションです。まずはそちらを先にお読みください。</p>
+
+</div>
+<h2 id="-4">動機</h2>
+<div id="CONTENT-4">
+<p><cite>Moose::Cookbook::Meta::Recipe2</cite>ではアトリビュートにラベルをつけられるアトリビュートメタクラスを作成しました。</p>
+<p>でも、メタクラスを使うやり方が通用するのは、ラベル「と」有効期限のように、ほかの新しい振る舞いを組み合わせたくなるまでのこと。2つのメタクラスをサブクラス化する別のメタクラスを作る手もありますが、それをしては訳のわからないことになってしまいます（多くのアトリビュートにさまざまな振る舞いを組み合わせたい場合はなおさらです）。</p>
+<p>さいわい、Mooseにはもっとまともな選択肢があります。それぞれの拡張モジュールをクラスではなくロールとしてカプセル化するというのがそれです。アトリビュートにラベルを追加するロールを作ることもできますし、もうひとつ有効期限を実装するロールを作ることもできるでしょう。</p>
+
+</div>
+<h2 id="-5">トレート</h2>
+<div id="CONTENT-5">
+<p>メタクラスに組み込むロールにはトレートという特別な名前がついていますが、名前が違うからといってだまされないでください。<strong>トレートは単なるロールにすぎません</strong>。</p>
+<p><b>has</b> in <cite>Moose</cite>を使うとアトリビュートに<code>traits</code>パラメータを渡せます。このパラメータはトレートのリストを受け取り、合成して無名のメタクラスを作り、その無名のメタクラスをアトリビュートのメタクラスにします。</p>
+<p>そう、裏ではまだ大量のメタクラスを利用しているのですが、その管理はMooseの方でしてくれます。</p>
+<p>トレートは、ロールができることなら何でもできます（アトリビュートを追加・改善したり、メソッドをラップしたり、メソッドを増やしたり、インタフェースを定義したり、等）。唯一違うのは、変更するのはユーザレベルのクラスではなく、アトリビュートのメタクラスである、ということだけです。</p>
+
+</div>
+<h2 id="-6">コードの詳細</h2>
+<div id="CONTENT-6">
+<p>このレシピとレシピ2のコード例を並べて見てみると、トレートの定義や利用の仕方は本格的なメタクラスの使い方とよく似ていることがわかります。</p>
+<pre>  package MyApp::Meta::Attribute::Trait::Labeled;
+  use Moose::Role;
+
+  has label =&gt; (
+      is        =&gt; 'rw',
+      isa       =&gt; 'Str',
+      predicate =&gt; 'has_label',
+  );
+
+</pre>
+<p>ここでは<cite>Moose::Meta::Attribute</cite>をサブクラス化するかわりにロールを定義します。<b>recipe 2</b> (<cite>Moose::Cookbook::Meta::Recipe2</cite>)のメタクラスと同様に、ロールを登録しておくと短い名前で参照できるようになります。</p>
+<pre>  package Moose::Meta::Attribute::Custom::Trait::Labeled;
+  sub register_implementation { 'MyApp::Meta::Attribute::Trait::Labeled' }
+
+</pre>
+<p>Mooseがトレートのフルネームを調べるときは<code>Moose::Meta::Attribute::Custom::Trait::$TRAIT_NAME</code>の<code>register_implementation</code>メソッドを探します。</p>
+<p>残りのコードについては、<b>レシピ2</b> (<cite>Moose::Cookbook::Meta::Recipe2</cite>)と「異なる」部分のみ見ていきましょう。</p>
+<pre>  has url =&gt; (
+      traits =&gt; [qw/Labeled/],
+      is     =&gt; 'rw',
+      isa    =&gt; 'Str',
+      label  =&gt; &quot;The site's URL&quot;,
+  );
+
+</pre>
+<p>ここでは、<code>metaclass</code>パラメータを渡すかわりに<code>traits</code>を渡しています。<code>traits</code>にはトレート名のリストが入ります。Mooseはこのトレートから構築した無名のアトリビュートメタクラスをそのアトリビュートのメタクラスとして利用します。<code>label</code>パラメータを渡すと、メタクラスの例と同じ動作をします。</p>
+<pre>          if (   $attribute-&gt;does('MyApp::Meta::Attribute::Trait::Labeled')
+              &amp;&amp; $attribute-&gt;has_label ) {
+              $dump .= $attribute-&gt;label;
+          }
+
+</pre>
+<p>メタクラスの例では<code>$attribute-&gt;isa</code>を使いましたが、ロールの場合はメタアトリビュートが必要なロールを<code>does</code>しているかを問い合わせます。メタアトリビュートがそのロールを組み込んでいない場合、アトリビュートのメタオブジェクトが<code>has_label</code>メソッドを持つことはありません。</p>
+<p>違いはこれだけ。あとはすべて同じです！</p>
+
+</div>
+<h2 id="-7">メタクラスをトレートにする</h2>
+<div id="CONTENT-7">
+<p>「ちょっと待って！　拡張モジュールはもう全部アトリビュートメタクラスで書いてしまったから、そのコードは壊したくないよ」と抗議された方へ。</p>
+<p>さいわいメタクラスは簡単にトレートに書き換えられますし、そのまま元のメタクラスを提供することもできます。</p>
+<pre>  package MyApp::Meta::Attribute::Labeled;
+  use Moose;
+  extends 'Moose::Meta::Attribute';
+  with 'MyApp::Meta::Attribute::Trait::Labeled';
+
+  package Moose::Meta::Attribute::Custom::Labeled;
+  sub register_implementation { 'MyApp::Meta::Attribute::Labeled' }
+
+</pre>
+<p>ただし、残念ながらその逆（メタクラスから作ったトレートを提供すること）はそれほど簡単なことではありません。</p>
+
+</div>
+<h2 id="-8">まとめ</h2>
+<div id="CONTENT-8">
+<p>アトリビュートを拡張するのであれば、<cite>Moose::Meta::Attribute</cite>をサブクラス化するより、振る舞いを合成できるようにする方が簡単で柔軟です。トレートを使うと、CPANにある、あるいは将来自分で書くほかの拡張モジュールとの相性がよくなります。Mooseの<b>has</b> in <cite>Moose</cite>にトレートのリストを与えると、動的にアトリビュートメタクラスを生成することが簡単にできるようになります。</p>
+
+</div>
+<h2 id="-9">作者</h2>
+<div id="CONTENT-9">
+<p>Shawn M Moore &lt;sartak@gmail.com&gt;</p>
+<p>Dave Rolsky &lt;autarch@urth.org&lt;gt&gt;</p>
+
+</div>
+<h2 id="COPYRIGHT_AND_LICENSE">COPYRIGHT AND LICENSE</h2>
+<div id="COPYRIGHT_AND_LICENSE_CONTENT">
+<p>Copyright 2006-2009 by Infinity Interactive, Inc.</p>
+<p><a href="http://www.iinteractive.com">http://www.iinteractive.com</a></p>
+<p>This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.</p>
+
+</div>
+</div>
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
+</div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
+</body>
+</html>
+
