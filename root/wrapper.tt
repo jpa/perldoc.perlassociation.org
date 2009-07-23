@@ -4,12 +4,30 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf8" />
 <title>[% page.title | html %] - Japan Perl Association ドキュメント和訳プロジェクト</title>
-<link rel="stylesheet" type="text/css" href="http://st.pimg.net/tucs/style.css" />
+<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css">
 </head>
 <body>
-<div id="content">
 [% content %]
+<div class="head">
+	<div class="logo">
+	<img src="http://lazy-css.org/css/img/logo.png">
+	</div>
+	<ul class="global-navi">
+
+	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
+	</ul>
 </div>
+
+<div class="footer">
+<ul class="footer-navi">
+	<li>リンク</li>
+	<li>リンク</li>
+	<li>リンク</li>
+
+	<li>リンク</li>
+</ul>
+<address>&copy; copyright 2009 jpa all right reserved.</address>
+
 </body>
 </html>
 

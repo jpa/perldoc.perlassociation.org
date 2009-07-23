@@ -6,7 +6,7 @@
 
 <ul>
 [% FOREACH module IN modules %]
-<li><a href="pod/[% module.name %]/index.html">[% module.name %]<a></li>
+<li><a href="pod/[% module.name %]/index.html">[% module.name %]</a></li>
 [% END %]
 </ul>
 

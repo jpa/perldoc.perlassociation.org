@@ -1,5 +1,5 @@
 [% WRAPPER wrapper.tt,
-    page.title => dist 
+    page.title => dist
 %]
 
 <h1>[% dist | html %] [% version | html %]</h1>
