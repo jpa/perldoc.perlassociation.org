@@ -2,7 +2,20 @@
     page.title => "Home"
 %]
 
-<h1>Japan Perl Association ドキュメント和訳プロジェクト</h1>
+<div class="top">
+<dl>
+<dt><img src="css/img/whatsnew.png" alt="WHAT'S NEW" /></dt>
+<dd>
+<ul>
+	<li><a href="pod/Moose-Doc-JA/index.html">Moose</a></li>
+	<li>モジュール名</li>
+	<li>モジュール名</li>
+</ul>
+</dd>
+</dl>
+</div>
+
+<h1>ドキュメント一覧</h1>
 
 <ul>
 [% FOREACH module IN modules %]

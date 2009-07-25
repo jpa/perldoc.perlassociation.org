@@ -4,8 +4,8 @@
 <div class="path" id="path">HOME &gt; <strong>[% dist | html %] [% version | html %]</strong></div>
 <h1>[% dist | html %] [% version | html %]</h1>
 
- <a href="http://search.cpan.org/search?query=[% dist | uri %]&mode=dist">search.cpan.orgでの検索結果</a>
-<ul>
+<div class="search"><a href="http://search.cpan.org/search?query=[% dist | uri %]&mode=dist">search.cpan.orgでの検索結果</a></div>
+<ul class="module-list">
 [% FOREACH module IN modules %]
 <li><a href="[% module.link %]">[% module.name | html %]</a></li>
 [% END %]
