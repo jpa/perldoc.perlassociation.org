@@ -2,12 +2,15 @@
 /* CSS Document */
 a:link{
 	color:#002E60;
+  text-decoration:none;
 }
 a:visited{
 	color:#990000;
+  text-decoration:none;
  }
 a:hover{
 	color:#990000;
+  text-decoration:underline;
 }
 img{
 vertical-align:bottom;
@@ -117,6 +120,55 @@ ul.list-index ul li{
 	margin:0 0 0 20px;
   padding:0;
 }
+
+ul.module-list{
+	height:1px;
+}
+* > ul.module-list{
+	height:auto;
+  min-height:1px;
+}
+ul.module-list:after{
+	content:'.';
+  clear:both;
+  font-size:0;
+  display:block;
+  visibility:hidden;
+  font-weight:normal;
+}
+ul.module-list li{
+	background:url(img/li-arrow.png) no-repeat 0 center;
+  list-style-type:none;
+  padding-left:15px;
+  white-space:nowrap;
+  float:left;
+  margin-right:30px;
+  min-width:280px;
+  width:280px;
+  line-height:2;
+}
+ul.module-list > li{
+	width:auto;
+}
+div.search{
+	background:#333333;
+  margin:0 -98px;
+  padding:3px 98px;
+  text-align:right;
+}
+
+div.search a:link{
+	color:#FFFFFF;
+}
+
+div.search a:visited{
+	color:#FFFFFF;
+  text-align:right;
+}
+div.search a:hover{
+	color:#FF6600;
+  text-align:right;
+}
 div.path{
 position:absolute;
 top:206px;
@@ -142,30 +194,40 @@ div.path a:hover{
   text-decoration:none;
 }
 div.head{
-	width:760px;
-  min-width:760px;
+	width:auto;
+  min-width:800px;
   position:absolute;
   top:0;
   left:0;
 }
 
-
-
 * > div.head{
 	width:auto;
 }
 
-div.head ul{
+div.head ul.global-navi{
 margin:0 98px;
 padding:0;
 }
-div.head ul li{
+div.head ul.global-navi li{
 margin:0;
 padding:0;
 line-height:1;
 float:left;
 height:64px;
 list-style:none;
+}
+ul.sub-navi{
+position:absolute;
+top:0;
+right:98px;
+margin:0;
+padding:0;
+}
+ul.sub-navi li{
+	margin:0;
+  padding:0;
+  list-style-type:none;
 }
 
 div.footer{
@@ -200,6 +262,7 @@ visibility:hidden;
 div.footer ul.footer-navi li{
 	float:left;
   white-space:nowrap;
+  background:none;
   border-left:1px solid #666666;
   border-right:1px solid #666666;
   display:inline;

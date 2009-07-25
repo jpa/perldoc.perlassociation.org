@@ -1,0 +1,83 @@
+@charset "UTF-8";
+/* CSS Document */
+
+html{
+margin:0;
+padding:0;
+font-size:14px;
+line-height:1.8;
+}
+body{
+margin:0;
+padding:206px 98px 0;
+background:url(img/top_bg.jpg) 0 0 repeat-x;
+font-size:14px;
+line-height:1.8;
+}
+
+h1{
+font-size:24px;
+line-height:1;
+margin:50px 0 0;
+padding:0 0 14px 40px;
+border-bottom:3px solid #006699;
+background:url(img/h2.png) no-repeat 5px 3px;
+}
+ul li{
+	background:url(img/li-arrow.png) no-repeat 0 center;
+  list-style-type:none;
+  padding-left:15px;
+  white-space:nowrap;
+  float:left;
+  margin-right:30px;
+}
+div.top{
+	background:url(img/top.jpg) no-repeat;
+  width:800px;
+  height:353px;
+  margin:0 auto;
+  position:relative;
+}
+div.top dl{
+position:absolute;
+top:0px;
+left:599px;
+margin:0;
+padding:0;
+}
+div.top dl dt{
+	margin:0;
+  padding:0;
+}
+div.top dl dd{
+	background:transparent;
+  border:none;
+  padding:0;
+  margin:0;
+}
+div.top dl dd ul{
+	margin:10px 0 0 10px;
+  padding:0;
+}
+div.top dl dd ul li{
+	background:url(img/top-arrow.png) no-repeat left center;
+  list-style-type:none;
+  margin:0 0 0px;
+  padding:0 0 6px 40px;
+  line-height:40px;
+  font-size:16px;
+  color:#FFFFFF;
+  
+}
+div.top dl dd ul li a:link{
+	color:#FFFFFF;
+  text-decoration:none;
+}
+div.top dl dd ul li a:visited{
+	color:#333;
+  text-decoration:none;
+}
+div.top dl dd ul li a:hover{
+	color:#FFFFFF;
+  text-decoration:underline;
+}
