@@ -56,7 +56,9 @@ h3{
 h4{
 	font-size:16px;
   margin:20px 0 10px 10px;
+  padding:0 0 0 16px;
   line-height:18px;
+  background:url(img/h4.png) no-repeat left center;
 }
 
 p{
@@ -101,6 +103,10 @@ dl dd{
 dl dd p{
 	margin:0;
   padding:0;
+}
+dl dd pre{
+	border:1px solid #006699;
+  background:#ECF7FD;
 }
 ul.list-index{
 	border:1px solid #016799;
@@ -233,7 +239,7 @@ ul.sub-navi li{
 div.footer{
 background:#CCCCCC;
 margin:100px -98px 0;
-padding:1px 0 0;
+padding:10px 0 0;
 }
 div.footer address{
 	background:#006699;
@@ -243,7 +249,7 @@ div.footer address{
   font-size:12px;
 }
 div.footer ul.footer-navi{
-	margin:10px auto 4px;
+	margin:0 auto 4px;
 	padding:0 0 1px;
   width:80%;
   height:1px;
@@ -270,4 +276,17 @@ div.footer ul.footer-navi li{
   padding:0 5px;
   line-height:14px;
   font-size:12px;
+}
+
+div.footer ul.footer-navi li a:link{
+	color:#333;
+  text-decoration:none;
+}
+div.footer ul.footer-navi li a:visited{
+	color:#333;
+  text-decoration:none;
+ }
+div.footer ul.footer-navi li a:hover{
+	color:#990000;
+  text-decoration:underline;
 }
