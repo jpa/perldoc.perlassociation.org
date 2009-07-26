@@ -203,7 +203,7 @@ sub process_pod {
 
         my $xhtml = '[% WRAPPER wrapper.tt, page.title => module _ " " _ dist _ "(" _ version _ ")" %]<h1>[% module | html %]</h1>'."\n";
 
-	$xhtml .= '<div class="path" id="path"><a href="/">HOME</a> &gt; <a href="/[% link %]">[% module | html %]</a></div>';
+	$xhtml .= '<div class="path" id="path"><a href="/">HOME</a> &gt; <strong>[% module | html %]</strong></div>';
 
         $xhtml .= $parser->asString();
 	$xhtml .= '[% END %]';	$xhtml  =~ s/<!-- INDEX START -->\n<h3(.*)?<\/h3>\n/<!-- INDEX START -->/;
