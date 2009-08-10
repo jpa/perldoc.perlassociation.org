@@ -3,23 +3,23 @@
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <title>[% page.title | html %] - Japan Perl Association ドキュメント和訳プロジェクト</title>
-<link rel="stylesheet" type="text/css" href="http://lazy-css.org/css/style.css" />
+<link rel="stylesheet" type="text/css" href="/static/css/style.css" />
 </head>
 <body>
 [% content %]
 <div class="head">
 	<div class="logo">
-	<img src="http://lazy-css.org/css/img/logo.png">
+	<img src="/static/img/logo.png">
 	</div>
 	<ul class="global-navi">
 
-	<li><img src="http://lazy-css.org/css/img/g_home.png" alt="ホーム"></li>
-	<li><img src="http://lazy-css.org/css/img/g_news.png" alt="ニュース"></li>
-	<li><img src="http://lazy-css.org/css/img/g_blog.png" alt="ブログ"></li>
+	<li><img src="/static/img/g_home.png" alt="ホーム"></li>
+	<li><img src="/static/img/g_news.png" alt="ニュース"></li>
+	<li><img src="/static/img/g_blog.png" alt="ブログ"></li>
 	</ul>
 </div>
 <ul class="sub-navi">
-<li><img src="http://lazy-css.org/css/img/inq.png" alt="お問い合わせ"></li>
+<li><img src="/static/img/inq.png" alt="お問い合わせ"></li>
 </ul>
 
 <div class="footer">
