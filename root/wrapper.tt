@@ -13,9 +13,9 @@
 	</div>
 	<ul class="global-navi">
 
-	<li><img src="/static/img/g_home.png" alt="ホーム"></li>
-	<li><img src="/static/img/g_news.png" alt="ニュース"></li>
-	<li><img src="/static/img/g_blog.png" alt="ブログ"></li>
+	<li><a href="http://perldoc.perlassociation.org"><img src="/static/img/g_home.png" alt="ホーム"></a></li>
+	<li><a href="http://japan.perlassociation.org/news"><img src="/static/img/g_news.png" alt="ニュース"></a></li>
+	<li><a href="http://blog.perlassociation.org"><img src="/static/img/g_blog.png" alt="ブログ"></a></li>
 	</ul>
 </div>
 <ul class="sub-navi">
@@ -23,12 +23,14 @@
 </ul>
 
 <div class="footer">
+[% IF (0) # don't need it now %]
 <ul class="footer-navi">
 	<li>リンク</li>
 	<li>リンク</li>
 	<li>リンク</li>
 	<li>リンク</li>
 </ul>
+[% END %]
 <address>&copy; copyright 2009 jpa all right reserved.</address>
 </div>
 </body>
