@@ -8,6 +8,7 @@ package JPA::CLI::ProcessPerldoc;
 use Moose;
 use MooseX::AttributeHelpers;
 use MooseX::Types::Path::Class;
+use File::Copy ();
 use File::Find::Rule;
 use File::Path ();
 use File::Temp ();
@@ -24,14 +25,23 @@ has template => (
     lazy => 1,
     default => sub {
         my $self = shift;
-        return Template->new( $self->template_args );
+        my $args = $self->template_args;
+        return Template->new({ INCLUDE_PATH => [ $self->template_dir->stringify ], %$args } );
     }
+);
+
+has template_dir => (
+    is => 'ro',
+    isa => 'Path::Class::Dir',
+    required => 1,
+    coerce => 1,
 );
 
 has template_args => (
     is => 'ro',
     isa => 'HashRef',
     required => 1,
+    default => sub { +{} }
 );
     
 has pod_parser => (
@@ -144,9 +154,13 @@ sub run {
     my ($self) = @_;
     # Check out the source code
     $self->create_index();
+
     foreach my $git_repo ($self->all_sources) {
         $self->process_repo( $git_repo );
     }
+
+    # Copy over all the static files
+    $self->process_static_files();
 }
 
 sub process_repo {
@@ -223,6 +237,30 @@ sub process_pod {
         { dist => $dist, modules => \@modules, version => $version }, 
         $dir->file($git_repo->name, 'index.html')->stringify,
     ) || confess $template->error;
+}
+
+sub process_static_files {
+    my $self = shift;
+
+    my $finder = File::Find::Rule->or( 
+        File::Find::Rule->file->name('*.css'),
+        File::Find::Rule->file->name('*.png'),
+        File::Find::Rule->file->name('*.jpg')
+    );
+
+    my $template_dir = $self->template_dir;
+    my $output_dir = $self->output_dir;
+    foreach my $file ( $finder->in($template_dir) ) {
+        my $relative = Path::Class::File->new($file)->relative($template_dir);
+        my $output = $output_dir->file( $relative );
+
+        my $parent = $output->parent;
+        if (! -d $parent) {
+            $parent->mkpath() or die;
+        }
+        File::Copy::copy( $file, $output->stringify ) or die;
+ 
+    }
 }
 
 sub DEMOLISH {
