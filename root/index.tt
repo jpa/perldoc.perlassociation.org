@@ -3,16 +3,16 @@
 %]
 
 <div class="top">
+[% IF (0) # this probably needs to be automatically generated %]
 <dl>
 <dt><img src="/static/img/whatsnew.png" alt="WHAT'S NEW" /></dt>
 <dd>
 <ul>
 	<li><a href="pod/Moose-Doc-JA/index.html">Moose</a></li>
-	<li>モジュール名</li>
-	<li>モジュール名</li>
 </ul>
 </dd>
 </dl>
+[% END %]
 </div>
 
 <h1>ドキュメント一覧</h1>
