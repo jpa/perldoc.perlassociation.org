@@ -200,7 +200,7 @@ sub process_pod {
     my @modules;
 
     # Find all pod
-    foreach my $file (sort { $a <=> $b } File::Find::Rule->file->name('*.pod')->in(".")) {
+    foreach my $file (sort { $a cmp $b } File::Find::Rule->file->name('*.pod')->in(".")) {
         my $modname = $file;
         $modname =~ s/\//::/g;
         $modname =~ s/\.pod$//;
